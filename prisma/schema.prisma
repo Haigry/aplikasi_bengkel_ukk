@@ -1,0 +1,45 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//DATABASE TABEL
+//1
+model  user{
+  id Int @id @default(autoincrement())
+  name String
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//2
+model karyawan{
+  id Int @id @default(autoincrement())
+  name String
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//3
+model sparepart{
+    id Int @id @default(autoincrement())
+    name String
+    harga Int
+}
+
+//4
+model transaksi{
+    id Int @id @default(autoincrement())
+}
+
+//5
+
+//6
+
+//7
+
+//8
