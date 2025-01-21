@@ -1,10 +1,19 @@
 import Dashboard from "../components/Dashboard";
+import LoginForm from "@/components/login/LoginForm";
+import HeaderPage from "@/components/landingPage/header";
+import Information from "@/components/landingPage/information";
+import Product from "@/components/landingPage/product";
+import Project from "@/components/landingPage/project";
+
 
 export default function UserDashboard() {
   return (
     <div className="dashboard-container">
-      <h1 className="text-2xl font-bold">User Dashboard</h1>
-      <Dashboard />
+      <HeaderPage />
+      <Information />
+      <Product />
+      <Project />
+
     </div>
   );
 }
