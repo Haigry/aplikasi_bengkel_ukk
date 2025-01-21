@@ -4,6 +4,8 @@ import HeaderPage from "@/components/landingPage/header";
 import Information from "@/components/landingPage/information";
 import Product from "@/components/landingPage/product";
 import Project from "@/components/landingPage/project";
+import BodyLandingPage from "@/components/landingPage/body";
+import Footer from "@/components/landingPage/footer";
 
 
 export default function UserDashboard() {
@@ -13,6 +15,8 @@ export default function UserDashboard() {
       <Information />
       <Product />
       <Project />
+      <BodyLandingPage />
+      <Footer />
 
     </div>
   );
