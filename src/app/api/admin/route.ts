@@ -38,6 +38,22 @@ export async function GET(request: Request) {
       return NextResponse.json(bookings);
     }
 
+    if (model === 'karyawan') {
+      const karyawan = await prisma.karyawan.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true
+            }
+          }
+        }
+      });
+      return NextResponse.json(karyawan);
+    }
+
     switch (model) {
       case 'user':
         if (role) {
@@ -118,6 +134,57 @@ export async function POST(request: Request) {
   try {
     const { model, data } = await request.json();
 
+    if (model === 'karyawan') {
+      // Validate required fields
+      if (!data.name || !data.email || !data.position || !data.userId) {
+        return NextResponse.json(
+          { error: 'Missing required fields' },
+          { status: 400 }
+        );
+      }
+
+      // Check if user exists and has KARYAWAN role
+      const user = await prisma.user.findUnique({
+        where: { id: data.userId }
+      });
+
+      if (!user || user.role !== 'KARYAWAN') {
+        return NextResponse.json(
+          { error: 'Invalid user or user role' },
+          { status: 400 }
+        );
+      }
+
+      // Create karyawan with connection to existing user
+      const karyawan = await prisma.karyawan.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          position: data.position,
+          user: {
+            connect: {
+              id: data.userId
+            }
+          }
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true
+            }
+          }
+        }
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: karyawan
+      });
+    }
+
     switch (model) {
       case 'user':
         // Hash password before creating user
@@ -152,7 +219,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
     }
   } catch (error) {
-    return handleError(error);
+    console.error('API error:', error);
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : 'Internal server error',
+        details: error 
+      },
+      { status: 500 }
+    );
   }
 }
 

@@ -5,15 +5,25 @@ import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 
 interface Karyawan {
+  password: any;
   id: number;
   name: string;
   email: string;
   position: string;
-  password: string;
+  userId?: number;
   user?: {
     id: number;
-    role: 'KARYAWAN';
+    email: string;
+    name: string;
+    role: string;
   };
+}
+
+interface UserWithRole {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
 }
 
 export default function KaryawanPage() {
@@ -29,9 +39,12 @@ export default function KaryawanPage() {
   const [editingEmployee, setEditingEmployee] = useState<Karyawan | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [availableUsers, setAvailableUsers] = useState<UserWithRole[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchEmployees();
+    fetchAvailableUsers();
   }, []);
 
   const fetchEmployees = async () => {
@@ -49,90 +62,105 @@ export default function KaryawanPage() {
     }
   };
 
+  const fetchAvailableUsers = async () => {
+    try {
+      const response = await fetch('/api/admin?model=user&role=KARYAWAN');
+      const users = await response.json();
+      // Filter out users that are already linked to karyawan
+      const availableUsers = users.filter((user: UserWithRole) => 
+        !employees.some(emp => emp.userId === user.id)
+      );
+      setAvailableUsers(availableUsers);
+    } catch (error) {
+      toast.error('Failed to load available users');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedUserId) {
+      toast.error('Please select a user');
+      return;
+    }
+
     try {
-      // Create user with KARYAWAN role first
-      const userResponse = await fetch('/api/admin', {
+      // Simplified data structure
+      const karyawanData = {
+        model: 'karyawan',
+        data: {
+          name: newEmployee.name,
+          email: newEmployee.email,
+          position: newEmployee.position,
+          userId: selectedUserId
+        }
+      };
+
+      console.log('Submitting data:', karyawanData); // Debug log
+
+      const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'user',
-          data: {
-            name: newEmployee.name,
-            email: newEmployee.email,
-            password: newEmployee.password,
-            role: 'KARYAWAN'
-          }
-        })
+        body: JSON.stringify(karyawanData)
       });
 
-      const userData = await userResponse.json();
+      const result = await response.json();
+      console.log('Response:', result); // Debug log
 
-      // Then create karyawan record
-      await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'karyawan',
-          data: {
-            name: newEmployee.name,
-            email: newEmployee.email,
-            password: newEmployee.password,
-            position: newEmployee.position,
-            userId: userData.id // Link to the created user
-          }
-        })
-      });
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create employee profile');
+      }
 
-      toast.success('Employee added successfully');
+      toast.success('Karyawan berhasil ditambahkan');
       setIsAddingEmployee(false);
       fetchEmployees();
+      fetchAvailableUsers();
       setNewEmployee({ name: '', email: '', position: '', password: '' });
+      setSelectedUserId(null);
     } catch (error) {
-      toast.error('Failed to add employee');
-      console.error(error);
+      console.error('Error creating employee:', error);
+      toast.error(error instanceof Error ? error.message : 'Gagal menambahkan karyawan');
     }
   };
 
   const handleEdit = async (data: Karyawan) => {
     try {
-      // Update user first
-      await fetch('/api/admin', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'user',
-          id: data.user?.id,
-          data: {
-            name: data.name,
-            email: data.email,
-            ...(data.password ? { password: data.password } : {})
-          }
-        })
-      });
+      // Update user data first
+      if (data.userId) {
+        await fetch('/api/admin', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'user',
+            id: data.userId,
+            data: {
+              name: data.name,
+              email: data.email,
+              ...(data.password ? { password: data.password } : {})
+            }
+          })
+        });
+      }
 
-      // Then update karyawan
+      // Then update karyawan data
       await fetch('/api/admin', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'karyawan',
-          id: editingEmployee?.id,
+          id: data.id,
           data: {
             name: data.name,
             email: data.email,
-            position: data.position,
-            ...(data.password ? { password: data.password } : {})
+            position: data.position
           }
         })
       });
 
-      toast.success('Employee updated successfully');
+      toast.success('Data karyawan berhasil diperbarui');
       setEditingEmployee(null);
       fetchEmployees();
     } catch (error) {
-      toast.error('Failed to update employee');
+      toast.error('Gagal memperbarui data karyawan');
     }
   };
 
@@ -140,22 +168,22 @@ export default function KaryawanPage() {
     try {
       const employee = employees.find(emp => emp.id === id);
       
-      // Delete karyawan record first
+      // Delete karyawan first
       await fetch(`/api/admin?model=karyawan&id=${id}`, {
         method: 'DELETE'
       });
 
-      // Then delete user record
-      if (employee?.user?.id) {
-        await fetch(`/api/admin?model=user&id=${employee.user.id}`, {
+      // Then delete associated user account
+      if (employee?.userId) {
+        await fetch(`/api/admin?model=user&id=${employee.userId}`, {
           method: 'DELETE'
         });
       }
 
-      toast.success('Employee deleted successfully');
+      toast.success('Karyawan berhasil dihapus');
       fetchEmployees();
     } catch (error) {
-      toast.error('Failed to delete employee');
+      toast.error('Gagal menghapus karyawan');
     }
     setDeleteConfirm(null);
   };
@@ -185,44 +213,43 @@ export default function KaryawanPage() {
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={newEmployee.name}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select User
+                  </label>
+                  <select
+                    value={selectedUserId || ''}
+                    onChange={(e) => {
+                      const userId = Number(e.target.value);
+                      setSelectedUserId(userId);
+                      const user = availableUsers.find(u => u.id === userId);
+                      if (user) {
+                        setNewEmployee({
+                          ...newEmployee,
+                          name: user.name || '',
+                          email: user.email
+                        });
+                      }
+                    }}
                     className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                     required
-                  />
+                  >
+                    <option value="">Select a user</option>
+                    {availableUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.email} ({user.name || 'No name'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={newEmployee.email}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Position
+                  </label>
                   <input
                     type="text"
                     value={newEmployee.position}
                     onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <input
-                    type="password"
-                    value={newEmployee.password}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
                     className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                     required
                   />
@@ -232,7 +259,11 @@ export default function KaryawanPage() {
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsAddingEmployee(false)}
+                  onClick={() => {
+                    setIsAddingEmployee(false);
+                    setSelectedUserId(null);
+                    setNewEmployee({ name: '', email: '', position: '', password: '' });
+                  }}
                   className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
