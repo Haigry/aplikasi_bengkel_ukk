@@ -19,3 +19,11 @@ export interface DashboardData {
   upcomingWorkshops: Workshop[];
   pastWorkshops: Workshop[];
 }
+
+export interface EditModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: any) => Promise<void>;
+  data: any;
+  title: string;
+}

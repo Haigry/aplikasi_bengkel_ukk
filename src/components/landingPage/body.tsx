@@ -10,19 +10,44 @@ interface AccordionItem {
 const accordionData: AccordionItem[] = [
     {
         id: "1",
-        title: "Can I use Landwind in open-source projects?",
+        title: "Berapa lama waktu service kendaraan?",
         content: (
-            <>
-                <p className="mb-2 text-gray-500 dark:text-gray-400">
-                    Landwind is an open-source library of interactive components built on top of Tailwind CSS including buttons, dropdowns, modals, navbars, and more.
-                </p>
-                <p className="text-gray-500 dark:text-gray-400">
-                    Check out this guide to learn how to <a href="#" className="text-purple-600 dark:text-purple-500 hover:underline">get started</a> and start developing websites even faster with components on top of Tailwind CSS.
-                </p>
-            </>
+            <p className="text-gray-500">
+                Waktu service bervariasi tergantung jenis pekerjaan. Service berkala biasanya membutuhkan 
+                waktu 2-3 jam, sedangkan perbaikan berat bisa memakan waktu 1-3 hari kerja.
+            </p>
         ),
     },
-    // ...Add other accordion items similarly
+    {
+        id: "2",
+        title: "Apakah ada garansi untuk perbaikan?",
+        content: (
+            <p className="text-gray-500">
+                Ya, kami memberikan garansi untuk setiap perbaikan dan penggantian sparepart. 
+                Periode garansi bervariasi antara 1-6 bulan tergantung jenis pekerjaan.
+            </p>
+        ),
+    },
+    {
+        id: "3",
+        title: "Apakah tersedia layanan derek?",
+        content: (
+            <p className="text-gray-500">
+                Ya, kami menyediakan layanan derek 24 jam untuk membantu kendaraan yang mengalami 
+                kerusakan di jalan. Hubungi hotline kami untuk bantuan segera.
+            </p>
+        ),
+    },
+    {
+        id: "4",
+        title: "Metode pembayaran apa saja yang diterima?",
+        content: (
+            <p className="text-gray-500">
+                Kami menerima pembayaran tunai, kartu debit/kredit, dan transfer bank. 
+                Tersedia juga opsi cicilan untuk perbaikan dengan nilai tertentu.
+            </p>
+        ),
+    }
 ];
 
 const BodyLandingPage: React.FC = () => {
@@ -36,7 +61,7 @@ const BodyLandingPage: React.FC = () => {
         <section className="bg-white dark:bg-gray-900">
             <div className="max-w-screen-xl px-4 pb-8 mx-auto lg:pb-24 lg:px-6">
                 <h2 className="mb-6 text-3xl font-extrabold tracking-tight text-center text-gray-900 lg:mb-8 lg:text-3xl dark:text-white">
-                    Frequently asked questions
+                    Pertanyaan yang Sering Diajukan
                 </h2>
                 <div className="max-w-screen-md mx-auto">
                     <div id="accordion-flush">
@@ -73,12 +98,11 @@ const BodyLandingPage: React.FC = () => {
                                     id={`accordion-flush-body-${item.id}`}
                                     className={`${openItem === item.id ? "" : "hidden"}`}
                                     aria-labelledby={`accordion-flush-heading-${item.id}`}
-                                >
+                                ></div>
                                     <div className="py-5 border-b border-gray-200 dark:border-gray-700">
                                         {item.content}
                                     </div>
                                 </div>
-                            </div>
                         ))}
                     </div>
                 </div>

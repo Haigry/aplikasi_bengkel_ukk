@@ -1,32 +1,45 @@
-import React from 'react';
+'use client';
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
-    onMenuClick: () => void;
+  onMenuClick?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
-    return (
-        <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-            <div className="flex items-center">
-                <button onClick={onMenuClick} className="text-gray-500 focus:outline-none lg:hidden">
-                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                </button>
-            </div>
+  const { logout, user } = useAuth();
 
-            <div className="flex items-center">
-                <div className="relative">
-                    <button className="flex items-center text-gray-700 dark:text-gray-200 focus:outline-none">
-                        <span className="text-sm">Admin User</span>
-                        <svg className="w-5 h-5 mx-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19 9L12 16L5 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </header>
-    );
+  return (
+    <header className="bg-white shadow-sm z-20">
+      <div className="h-16 px-4 flex justify-between items-center">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onMenuClick}
+            className="text-gray-500 hover:text-gray-700 lg:hidden focus:outline-none"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="text-xl font-semibold text-gray-800">
+            {user?.name || 'Welcome'}
+          </span>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-gray-600 hidden sm:inline">
+            {user?.role || ''}
+          </span>
+          <button
+            onClick={() => logout()}
+            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+  );
 };
 
 export default Header;

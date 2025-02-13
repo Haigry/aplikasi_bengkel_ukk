@@ -19,3 +19,23 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Add this for all inputs */
+input,
+select,
+textarea {
+  color: #000000 !important;
+}
+
+input::placeholder,
+select::placeholder,
+textarea::placeholder {
+  color: #6B7280 !important;
+}
+
+/* Dark mode overrides if needed */
+.dark input,
+.dark select,
+.dark textarea {
+  color: #FFFFFF !important;
+}

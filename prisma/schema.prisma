@@ -3,43 +3,125 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//DATABASE TABEL
-//1
-model  user{
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique
-  password String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+generator client {
+  provider = "prisma-client-js"
 }
 
-//2
-model karyawan{
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique
-  password String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id               Int       @id @default(autoincrement())
+  email            String    @unique
+  password         String
+  name             String?
+  role             Role      @default(CUSTOMER)
+  resetToken       String?   // Add this for password reset
+  resetTokenExpiry DateTime? // Add this for password reset
+  transaksi        Riwayat[]
+  karyawan         Karyawan?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  Booking          Booking[]
+
+  Kendaraan Kendaraan[]
 }
 
-//3
-model sparepart{
-    id Int @id @default(autoincrement())
-    name String
-    harga Int
+model Karyawan {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  position  String
+  userId    Int?      @unique
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  transaksi Riwayat[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
-//4
-model transaksi{
-    id Int @id @default(autoincrement())
+model Kendaraan {
+  noPolisi  String    @id
+  merk      String
+  userId    Int       // Add this to track vehicle owner
+  user      User      @relation(fields: [userId], references: [id])
+  transaksi Riwayat[]
 }
 
-//5
+model Booking {
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  user      User         @relation(fields: [userId], references: [id])
+  queue     Int
+  date      DateTime
+  message   String       @db.Text
+  status    BookingStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
 
-//6
+model Sparepart {
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String?
+  harga         Float
+  stok          Int             @default(0)
+  TransaksiItem TransaksiItem[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
 
-//7
+model Service {
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String?
+  harga         Float
+  TransaksiItem TransaksiItem[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
 
-//8
+model Riwayat {
+  id          Int             @id @default(autoincrement())
+  userId      Int
+  karyawanId  Int
+  kendaraanId String         // Add this for vehicle reference
+  totalHarga  Float          @default(0)
+  status      StatusTransaksi @default(PENDING)
+  items       TransaksiItem[]
+  user        User            @relation(fields: [userId], references: [id])
+  karyawan    Karyawan        @relation(fields: [karyawanId], references: [id])
+  kendaraan   Kendaraan       @relation(fields: [kendaraanId], references: [noPolisi])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model TransaksiItem {
+  id          Int        @id @default(autoincrement())
+  transaksiId Int
+  sparepartId Int?
+  serviceId   Int?
+  quantity    Int        @default(1)
+  harga       Float      @default(0)
+  subtotal    Float      @default(0)
+  transaksi   Riwayat    @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
+  sparepart   Sparepart? @relation(fields: [sparepartId], references: [id])
+  service     Service?   @relation(fields: [serviceId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+enum Role {
+  ADMIN
+  KARYAWAN
+  CUSTOMER
+}
+
+enum StatusTransaksi {
+  PENDING
+  PROCESS
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
