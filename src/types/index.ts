@@ -23,7 +23,13 @@ export interface DashboardData {
 export interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<void>;
-  data: any;
+  onSubmit: (data: GenericObject) => Promise<void>;
+  data: GenericObject;
   title: string;
 }
+
+export interface GenericObject {
+  [key: string]: unknown;
+}
+
+export type ErrorHandler = (error: Error) => void;

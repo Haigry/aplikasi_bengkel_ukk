@@ -1,8 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { styleConfig } from '@/styles/components';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
+import { handleError } from '@/utils/errorHandler';
+import type { HandleError } from '@/types/global';
 
 interface Karyawan {
   password: any;
@@ -37,44 +40,43 @@ export default function KaryawanPage() {
   });
   const [isAddingEmployee, setIsAddingEmployee] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Karyawan | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [_, setSidebarOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [availableUsers, setAvailableUsers] = useState<UserWithRole[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchEmployees();
-    fetchAvailableUsers();
-  }, []);
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/admin?model=karyawan');
       const data = await response.json();
       setEmployees(Array.isArray(data) ? data : []);
       toast.success('Data loaded successfully');
-    } catch (error) {
-      toast.error('Failed to load employees');
+    } catch (_error) {
+      handleError(_error as Error, 'Failed to load employees');
       setEmployees([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchAvailableUsers = async () => {
+  const fetchAvailableUsers = useCallback(async () => {
     try {
       const response = await fetch('/api/admin?model=user&role=KARYAWAN');
       const users = await response.json();
-      // Filter out users that are already linked to karyawan
       const availableUsers = users.filter((user: UserWithRole) => 
         !employees.some(emp => emp.userId === user.id)
       );
       setAvailableUsers(availableUsers);
-    } catch (error) {
-      toast.error('Failed to load available users');
+    } catch (_error) {
+      handleError(_error as Error, 'Failed to load available users');
     }
-  };
+  }, [employees]);
+
+  useEffect(() => {
+    fetchEmployees();
+    fetchAvailableUsers();
+  }, [fetchEmployees, fetchAvailableUsers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

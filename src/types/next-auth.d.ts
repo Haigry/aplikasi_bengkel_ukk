@@ -1,21 +1,23 @@
-import "next-auth";
+import { DefaultSession } from 'next-auth';
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface User {
     id: string;
-    email: string;
-    name: string;
     role: string;
-    karyawanId?: number;
+    name?: string | null;
+    email: string;
   }
 
-  interface Session {
+  interface Session extends DefaultSession {
     user: {
-      id: number;
-      email: string;
-      name: string;
+      id: string;
       role: string;
-      karyawanId: number;
-    }
+    } & DefaultSession['user']
+  }
+}
+
+declare module 'next-auth/adapters' {
+  interface AdapterUser {
+    role: string;
   }
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 const Testimonials: React.FC = () => {
   const testimonials = [
@@ -41,17 +42,19 @@ const Testimonials: React.FC = () => {
               className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
               <div className="flex items-center mb-6">
-                <img 
+                <Image 
                   src={testimonial.image} 
                   alt={testimonial.name}
-                  className="w-16 h-16 rounded-full object-cover mr-4"
+                  width={64}
+                  height={64}
+                  className="rounded-full object-cover mr-4"
                 />
                 <div>
                   <h3 className="font-semibold text-gray-900">{testimonial.name}</h3>
                   <p className="text-blue-600 text-sm">{testimonial.role}</p>
                 </div>
               </div>
-              <p className="text-gray-600 italic">"{testimonial.quote}"</p>
+              <p className="text-gray-600 italic">&ldquo;{testimonial.quote}&rdquo;</p>
             </div>
           ))}
         </div>
