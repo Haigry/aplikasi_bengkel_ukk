@@ -5,7 +5,6 @@ import { styleConfig } from '@/styles/components';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 import { handleError } from '@/utils/errorHandler';
-import type { HandleError } from '@/types/global';
 
 interface Karyawan {
   password: any;
@@ -40,7 +39,6 @@ export default function KaryawanPage() {
   });
   const [isAddingEmployee, setIsAddingEmployee] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Karyawan | null>(null);
-  const [_, setSidebarOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [availableUsers, setAvailableUsers] = useState<UserWithRole[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);

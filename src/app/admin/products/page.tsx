@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Sparepart } from '@prisma/client';
-import { EditModalProps } from '@/types';
 import { styleConfig } from '@/styles/components';
 import Modal from '@/components/common/Modal';
 
@@ -16,7 +15,6 @@ export default function ProductsPage() {
   });
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Sparepart | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetchProducts();

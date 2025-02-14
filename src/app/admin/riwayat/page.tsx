@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { BookingStatus, StatusTransaksi } from '@prisma/client';
 import { toast } from 'react-hot-toast';
-import { FaCalendarAlt, FaClock, FaUserCircle, FaCar } from 'react-icons/fa';
 import Modal from '@/components/common/Modal';
 
 interface Booking {
