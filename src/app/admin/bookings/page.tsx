@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { BookingStatus } from '@prisma/client';
-import { styleConfig } from '@/styles/components';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 
@@ -20,7 +19,6 @@ interface Booking {
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   useEffect(() => {
@@ -32,8 +30,8 @@ export default function BookingsPage() {
       const response = await fetch('/api/admin?model=booking');
       const data = await response.json();
       setBookings(Array.isArray(data) ? data : []);
-    } catch (error) {
-      toast.error('Failed to load bookings');
+    } catch (error: any) {
+      toast.error(`Failed to load bookings: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -57,20 +55,21 @@ export default function BookingsPage() {
       } else {
         throw new Error('Failed to update status');
       }
-    } catch (error) {
-      toast.error('Error updating status');
+    } catch (error: any) {
+      toast.error(`Error updating status: ${error.message}`);
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
-      await fetch(`/api/admin?model=booking&id=${id}`, {
+      const response = await fetch(`/api/admin?model=booking&id=${id}`, {
         method: 'DELETE'
       });
+      if (!response.ok) throw new Error('Failed to delete booking');
       toast.success('Booking deleted successfully');
       fetchBookings();
-    } catch (error) {
-      toast.error('Failed to delete booking');
+    } catch (error: any) {
+      toast.error(`Failed to delete booking: ${error.message}`);
     }
     setDeleteConfirm(null);
   };

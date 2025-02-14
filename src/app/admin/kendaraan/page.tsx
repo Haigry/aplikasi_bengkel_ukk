@@ -18,7 +18,6 @@ export default function KendaraanPage() {
   });
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Kendaraan | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,8 +31,8 @@ export default function KendaraanPage() {
       const data = await response.json();
       setVehicles(Array.isArray(data) ? data : []);
       toast.success('Data loaded successfully');
-    } catch (error) {
-      toast.error('Failed to load vehicles');
+    } catch (error: any) {
+      toast.error(`Failed to load vehicles: ${error.message}`);
       setVehicles([]);
     } finally {
       setLoading(false);
@@ -55,8 +54,8 @@ export default function KendaraanPage() {
       setIsAddingVehicle(false);
       fetchVehicles();
       setNewVehicle({ noPolisi: '', merk: '' });
-    } catch (error) {
-      toast.error('Failed to add vehicle');
+    } catch (error: any) {
+      toast.error(`Failed to add vehicle: ${error.message}`);
     }
   };
 
@@ -74,8 +73,8 @@ export default function KendaraanPage() {
       toast.success('Vehicle updated successfully');
       setEditingVehicle(null);
       fetchVehicles();
-    } catch (error) {
-      toast.error('Failed to update vehicle');
+    } catch (error: any) {
+      toast.error(`Failed to update vehicle: ${error.message}`);
     }
   };
 
@@ -86,8 +85,8 @@ export default function KendaraanPage() {
       });
       toast.success('Vehicle deleted successfully');
       fetchVehicles();
-    } catch (error) {
-      toast.error('Failed to delete vehicle');
+    } catch (error: any) {
+      toast.error(`Failed to delete vehicle: ${error.message}`);
     }
     setDeleteConfirm(null);
   };
