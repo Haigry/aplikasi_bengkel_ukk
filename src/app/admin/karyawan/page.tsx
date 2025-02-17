@@ -95,19 +95,14 @@ export default function KaryawanPage() {
         }
       };
 
-      console.log('Submitting data:', karyawanData); // Debug log
-
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(karyawanData)
       });
 
-      const result = await response.json();
-      console.log('Response:', result); // Debug log
-
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create employee profile');
+        throw new Error( 'Failed to create employee profile');
       }
 
       toast.success('Karyawan berhasil ditambahkan');

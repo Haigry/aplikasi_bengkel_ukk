@@ -31,8 +31,8 @@ export default function AntrianPage() {
       const response = await fetch('/api/admin?model=booking');
       const data = await response.json();
       setBookings(data);
-    } catch (error: any) {
-      toast.error(`Gagal memuat data antrian: ${error.message}`);
+    } catch (error) {
+      toast.error(`Gagal memuat data antrian: ${Error}`);
     } finally {
       setLoading(false);
     }
@@ -54,8 +54,8 @@ export default function AntrianPage() {
       
       toast.success('Status berhasil diupdate');
       fetchBookings();
-    } catch (error: any) {
-      toast.error(`Gagal mengubah status: ${error.message}`);
+    } catch (error) {
+      toast.error(`Gagal mengubah status: ${Error}`);
     }
   };
 

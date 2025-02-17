@@ -30,8 +30,8 @@ export default function BookingsPage() {
       const response = await fetch('/api/admin?model=booking');
       const data = await response.json();
       setBookings(Array.isArray(data) ? data : []);
-    } catch (error: any) {
-      toast.error(`Failed to load bookings: ${error.message}`);
+    } catch (error) {
+      toast.error(`Failed to load bookings: ${Error}`);
     } finally {
       setLoading(false);
     }
@@ -55,8 +55,8 @@ export default function BookingsPage() {
       } else {
         throw new Error('Failed to update status');
       }
-    } catch (error: any) {
-      toast.error(`Error updating status: ${error.message}`);
+    } catch (error) {
+      toast.error(`Error updating status: ${Error}`);
     }
   };
 
@@ -68,8 +68,8 @@ export default function BookingsPage() {
       if (!response.ok) throw new Error('Failed to delete booking');
       toast.success('Booking deleted successfully');
       fetchBookings();
-    } catch (error: any) {
-      toast.error(`Failed to delete booking: ${error.message}`);
+    } catch (error) {
+      toast.error(`Failed to delete booking: ${Error}`);
     }
     setDeleteConfirm(null);
   };

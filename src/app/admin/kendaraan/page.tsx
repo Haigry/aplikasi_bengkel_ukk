@@ -31,8 +31,8 @@ export default function KendaraanPage() {
       const data = await response.json();
       setVehicles(Array.isArray(data) ? data : []);
       toast.success('Data loaded successfully');
-    } catch (error: any) {
-      toast.error(`Failed to load vehicles: ${error.message}`);
+    } catch (error) {
+      toast.error(`Failed to load vehicles: ${Error}`);
       setVehicles([]);
     } finally {
       setLoading(false);
@@ -54,8 +54,8 @@ export default function KendaraanPage() {
       setIsAddingVehicle(false);
       fetchVehicles();
       setNewVehicle({ noPolisi: '', merk: '' });
-    } catch (error: any) {
-      toast.error(`Failed to add vehicle: ${error.message}`);
+    } catch (error) {
+      toast.error(`Failed to add vehicle: ${Error}`);
     }
   };
 
@@ -73,8 +73,8 @@ export default function KendaraanPage() {
       toast.success('Vehicle updated successfully');
       setEditingVehicle(null);
       fetchVehicles();
-    } catch (error: any) {
-      toast.error(`Failed to update vehicle: ${error.message}`);
+    } catch (error) {
+      toast.error(`Failed to update vehicle: ${Error}`);
     }
   };
 
@@ -85,8 +85,8 @@ export default function KendaraanPage() {
       });
       toast.success('Vehicle deleted successfully');
       fetchVehicles();
-    } catch (error: any) {
-      toast.error(`Failed to delete vehicle: ${error.message}`);
+    } catch (error) {
+      toast.error(`Failed to delete vehicle: ${Error}`);
     }
     setDeleteConfirm(null);
   };

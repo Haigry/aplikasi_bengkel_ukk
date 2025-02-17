@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "node --no-deprecation ./node_modules/next/dist/bin/next build",
+    "build": "next build node --no-deprecation node_modules/next/dist/server/next-dev-server.js",
     "start": "next start",
     "lint": "next lint"
   },
