@@ -80,7 +80,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 bg-white min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
           <span className="text-blue-600">Riwayat</span> Service
@@ -90,7 +90,7 @@ export default function HistoryPage() {
         </p>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden"></div>
+      <div className="shadow-md rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -129,5 +129,6 @@ export default function HistoryPage() {
           </tbody>
         </table>
       </div>
+    </div>
   );
 }

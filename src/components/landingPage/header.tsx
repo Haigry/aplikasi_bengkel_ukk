@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 const HeaderPage: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -37,6 +38,24 @@ const HeaderPage: React.FC = () => {
       router.push('/admin');
     }
   };
+
+  const serviceMenu = [
+    {
+      title: "Booking Service",
+      href: "/customer/booking",
+      description: "Buat jadwal service baru"
+    },
+    {
+      title: "Riwayat Booking",
+      href: "/customer/booking/history",
+      description: "Lihat status booking Anda"
+    },
+    {
+      title: "Riwayat Service",
+      href: "/customer/histori",
+      description: "Lihat riwayat service kendaraan"
+    }
+  ];
 
   return (
     <header className={`fixed w-full z-50 transition-all duration-300 ${
@@ -81,12 +100,36 @@ const HeaderPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center space-x-4">
-                  <Link
-                    href="/customer/booking"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700"
-                  >
-                    Booking Service
-                  </Link>
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsMenuOpen(!isMenuOpen)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 flex items-center space-x-2"
+                    >
+                      <span>Layanan Service</span>
+                      <svg className={`w-4 h-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Service Dropdown Menu */}
+                    {isMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                        <div className="py-1" role="menu">
+                          {serviceMenu.map((item, index) => (
+                            <Link
+                              key={index}
+                              href={item.href}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <div className="font-medium">{item.title}</div>
+                              <div className="text-xs text-gray-500">{item.description}</div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={handleLogout}
                     className="text-red-600 hover:text-red-700"

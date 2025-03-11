@@ -2,6 +2,26 @@ import { PrismaClient } from "@prisma/client";
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { comparePassword } from "./auth/password";
+import "next-auth";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: number;
+      role: string;
+      karyawanId: number;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    }
+  }
+
+  interface User {
+    id: string;
+    role: string;
+    karyawanId?: number;
+  }
+}
 
 const prisma = new PrismaClient();
 
