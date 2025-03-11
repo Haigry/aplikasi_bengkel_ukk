@@ -6,19 +6,19 @@ const Testimonials: React.FC = () => {
     {
       name: "Ahmad Setiawan",
       role: "Pelanggan Setia",
-      image: "/images/testimonials/person1.jpg",
+      image: "/Testimoni/1.jpeg",
       quote: "Pelayanan bengkel sangat profesional. Mekaniknya ahli dan ramah. Saya sangat puas dengan hasil perbaikan mobil saya."
     },
     {
       name: "Siti Rahayu",
       role: "Pengusaha",
-      image: "/images/testimonials/person2.jpg",
+      image: "/Testimoni/2.jpeg",
       quote: "Harga transparan dan kualitas sparepart terjamin original. Sudah 3 tahun menjadi pelanggan tetap di sini."
     },
     {
       name: "Budi Santoso",
       role: "Driver Ojek Online",
-      image: "/images/testimonials/person3.jpg",
+      image: "/Testimoni/3.jpeg",
       quote: "Service cepat dan berkualitas. Motor saya selalu dirawat di sini karena hasilnya selalu memuaskan."
     }
   ];
@@ -42,13 +42,15 @@ const Testimonials: React.FC = () => {
               className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
               <div className="flex items-center mb-6">
-                <Image 
-                  src={testimonial.image} 
-                  alt={testimonial.name}
-                  width={64}
-                  height={64}
-                  className="rounded-full object-cover mr-4"
-                />
+                <div className="relative w-16 h-16 mr-4">
+                  <Image 
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    fill
+                    className="rounded-full object-cover"
+                    sizes="(max-width: 64px) 100vw, 64px"
+                  />
+                </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">{testimonial.name}</h3>
                   <p className="text-blue-600 text-sm">{testimonial.role}</p>

@@ -7,6 +7,13 @@ import Modal from '@/components/common/Modal';
 interface Kendaraan {
   noPolisi: string;
   merk: string;
+  userId: number;
+}
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
 }
 
 export default function KendaraanPage() {
@@ -14,14 +21,18 @@ export default function KendaraanPage() {
   const [loading, setLoading] = useState(true);
   const [newVehicle, setNewVehicle] = useState({
     noPolisi: '',
-    merk: ''
+    merk: '',
+    userId: 0
   });
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Kendaraan | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     fetchVehicles();
+    fetchUsers();
   }, []);
 
   const fetchVehicles = async () => {
@@ -32,15 +43,30 @@ export default function KendaraanPage() {
       setVehicles(Array.isArray(data) ? data : []);
       toast.success('Data loaded successfully');
     } catch (error) {
-      toast.error(`Failed to load vehicles: ${Error}`);
+      toast.error('Failed to load vehicles');
       setVehicles([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/admin?model=user');
+      const data = await response.json();
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      toast.error('Failed to load users');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newVehicle.userId) {
+      toast.error('Please select a user');
+      return;
+    }
+
     try {
       await fetch('/api/admin', {
         method: 'POST',
@@ -53,9 +79,9 @@ export default function KendaraanPage() {
       toast.success('Vehicle added successfully');
       setIsAddingVehicle(false);
       fetchVehicles();
-      setNewVehicle({ noPolisi: '', merk: '' });
+      setNewVehicle({ noPolisi: '', merk: '', userId: 0 });
     } catch (error) {
-      toast.error(`Failed to add vehicle: ${Error}`);
+      toast.error('Failed to add vehicle');
     }
   };
 
@@ -74,7 +100,7 @@ export default function KendaraanPage() {
       setEditingVehicle(null);
       fetchVehicles();
     } catch (error) {
-      toast.error(`Failed to update vehicle: ${Error}`);
+      toast.error('Failed to update vehicle');
     }
   };
 
@@ -86,7 +112,7 @@ export default function KendaraanPage() {
       toast.success('Vehicle deleted successfully');
       fetchVehicles();
     } catch (error) {
-      toast.error(`Failed to delete vehicle: ${Error}`);
+      toast.error('Failed to delete vehicle');
     }
     setDeleteConfirm(null);
   };
@@ -115,6 +141,23 @@ export default function KendaraanPage() {
           >
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
+                  <select
+                    value={newVehicle.userId}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, userId: Number(e.target.value) })}
+                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                    required
+                  >
+                    <option value="">Select a user</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">License Plate</label>
                   <input

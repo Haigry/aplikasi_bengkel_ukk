@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          throw new Error("Invalid credentials");
+          throw new Error("Email salah");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
-          throw new Error("Invalid credentials");
+          throw new Error("Password salah");
         }
 
         return {

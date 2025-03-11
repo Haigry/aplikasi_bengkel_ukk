@@ -24,9 +24,8 @@ const Footer: React.FC = () => {
     };
 
     const operationalHours = [
-        { days: 'Senin - Jumat', hours: '08:00 - 17:00' },
-        { days: 'Sabtu', hours: '08:00 - 15:00' },
-        { days: 'Minggu', hours: 'Tutup' }
+        { days: 'Senin - Jumat', hours: '08:00 - 18:00' },
+        { days: 'Sabtu - Minggu', hours: '08:00 - 16:00' }
     ];
 
     return (
@@ -44,7 +43,7 @@ const Footer: React.FC = () => {
                             </div>
                         </div>
                         <div className="text-gray-400 space-y-4">
-                            <p>Jl. Raya Utama No. 123<br />Kota Anda, 12345</p>
+                            <p>Jetak, Jomblang RT 04<br />Bantul, 55764</p>
                             <div>
                                 <p className="font-semibold text-white">Jam Operasional:</p>
                                 {operationalHours.map((schedule, index) => (

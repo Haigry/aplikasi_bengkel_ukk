@@ -45,9 +45,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <Image 
             src="/BENGKEL.png" 
             alt="Logo" 
-            width={100} 
-            height={100}
-            className="w-100 h-100"
+            width={50} 
+            height={50}
+            className=""
           />
           <span className="text-lg font-bold">Dashboard Admin</span>
         </div>

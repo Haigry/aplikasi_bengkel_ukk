@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { styleConfig } from '@/styles/components';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
@@ -43,38 +43,73 @@ export default function KaryawanPage() {
   const [availableUsers, setAvailableUsers] = useState<UserWithRole[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
+  // Add mounted ref to prevent fetch after unmount
+  const isMounted = useRef(true);
+
+  // Modified fetchEmployees
   const fetchEmployees = useCallback(async () => {
-    setLoading(true);
+    if (!isMounted.current) return;
+    
     try {
+      setLoading(true);
       const response = await fetch('/api/admin?model=karyawan');
+      if (!response.ok) throw new Error('Failed to fetch employees');
+      
       const data = await response.json();
-      setEmployees(Array.isArray(data) ? data : []);
-      toast.success('Data loaded successfully');
-    } catch (_error) {
-      handleError(_error as Error, 'Failed to load employees');
-      setEmployees([]);
+      if (isMounted.current) {
+        setEmployees(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      if (isMounted.current) {
+        handleError(error, 'Failed to load employees');
+        setEmployees([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
+  // Modified fetchAvailableUsers
   const fetchAvailableUsers = useCallback(async () => {
+    if (!isMounted.current) return;
+
     try {
       const response = await fetch('/api/admin?model=user&role=KARYAWAN');
+      if (!response.ok) throw new Error('Failed to fetch users');
+
       const users = await response.json();
-      const availableUsers = users.filter((user: UserWithRole) => 
-        !employees.some(emp => emp.userId === user.id)
-      );
-      setAvailableUsers(availableUsers);
-    } catch (_error) {
-      handleError(_error as Error, 'Failed to load available users');
+      if (isMounted.current) {
+        const availableUsers = users.filter((user: UserWithRole) => 
+          !employees.some(emp => emp.userId === user.id)
+        );
+        setAvailableUsers(availableUsers);
+      }
+    } catch (error) {
+      if (isMounted.current) {
+        handleError(error, 'Failed to load available users');
+      }
     }
   }, [employees]);
 
+  // Modified useEffect
   useEffect(() => {
+    // Initial fetch
     fetchEmployees();
-    fetchAvailableUsers();
-  }, [fetchEmployees, fetchAvailableUsers]);
+
+    // Cleanup function
+    return () => {
+      isMounted.current = false;
+    };
+  }, []); // Remove fetchEmployees from dependency array
+
+  // Separate useEffect for fetchAvailableUsers
+  useEffect(() => {
+    if (!loading && employees.length > 0) {
+      fetchAvailableUsers();
+    }
+  }, [loading, employees, fetchAvailableUsers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

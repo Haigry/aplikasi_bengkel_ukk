@@ -185,6 +185,27 @@ export async function POST(request: Request) {
       });
     }
 
+    // Validate sparepart data
+    if (model === 'sparepart') {
+      if (!data.name || data.harga === undefined || data.stok === undefined) {
+        return NextResponse.json(
+          { error: 'Missing required fields' },
+          { status: 400 }
+        );
+      }
+
+      const sparepart = await prisma.sparepart.create({
+        data: {
+          name: data.name,
+          description: data.description || '',
+          harga: data.harga,
+          stok: data.stok
+        }
+      });
+
+      return NextResponse.json(sparepart);
+    }
+
     switch (model) {
       case 'user':
         // Hash password before creating user
@@ -214,7 +235,27 @@ export async function POST(request: Request) {
           }
         }));
       case 'kendaraan':
-        return NextResponse.json(await prisma.kendaraan.create({ data }));
+        // Validate kendaraan data
+        if (!data.noPolisi || !data.merk || !data.userId) {
+          return NextResponse.json(
+            { error: 'Missing required fields (noPolisi, merk, userId)' },
+            { status: 400 }
+          );
+        }
+
+        const kendaraan = await prisma.kendaraan.create({
+          data: {
+            noPolisi: data.noPolisi,
+            merk: data.merk,
+            user: {
+              connect: {
+                id: data.userId
+              }
+            }
+          }
+        });
+
+        return NextResponse.json(kendaraan);
       default:
         return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
     }

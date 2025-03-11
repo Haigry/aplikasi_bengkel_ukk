@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Sparepart } from '@prisma/client';
 import { styleConfig } from '@/styles/components';
 import Modal from '@/components/common/Modal';
+import toast from 'react-hot-toast';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Sparepart[]>([]);
@@ -15,6 +16,7 @@ export default function ProductsPage() {
   });
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Sparepart | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -34,18 +36,31 @@ export default function ProductsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('/api/admin', {
+      const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'sparepart',
-          data: newProduct
+          data: {
+            name: newProduct.name,
+            description: newProduct.description || '',
+            harga: parseInt(String(newProduct.harga)),
+            stok: parseInt(String(newProduct.stok))
+          }
         })
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create product');
+      }
+
+      toast.success('Product added successfully');
       setIsAddingProduct(false);
       fetchProducts();
       setNewProduct({ name: '', description: '', harga: 0, stok: 0 });
-    } catch (error) {
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add product');
       console.error('Error:', error);
     }
   };
@@ -65,6 +80,25 @@ export default function ProductsPage() {
       fetchProducts();
     } catch (error) {
       console.error('Error:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/admin?model=sparepart&id=${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete product');
+      }
+      
+      toast.success('Product deleted successfully');
+      fetchProducts();
+      setDeleteConfirm(null);
+    } catch (error) {
+      toast.error('Failed to delete product');
+      console.error('Delete error:', error);
     }
   };
 
@@ -263,7 +297,12 @@ export default function ProductsPage() {
                         >
                           Edit
                         </button>
-                        <button className="text-red-600 hover:text-red-900">Delete</button>
+                        <button 
+                          onClick={() => setDeleteConfirm(String(product.id))}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -271,6 +310,31 @@ export default function ProductsPage() {
               </table>
             </div>
           </div>
+
+          {/* Add Delete Confirmation Modal */}
+          <Modal
+            isOpen={!!deleteConfirm}
+            onClose={() => setDeleteConfirm(null)}
+            title="Confirm Delete"
+          >
+            <div className="p-6">
+              <p className="mb-4">Are you sure you want to delete this product?</p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-4 py-2 text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </Modal>
 
           {/* Loading State */}
           {loading && (
@@ -283,3 +347,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

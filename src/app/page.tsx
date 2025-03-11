@@ -4,7 +4,6 @@ import Product from "@/components/landingPage/product";
 import Project from "@/components/landingPage/project";
 import Testimonials from "@/components/landingPage/testimonials";
 import CTA from "@/components/landingPage/cta";
-import BodyLandingPage from "@/components/landingPage/body";
 import Footer from "@/components/landingPage/footer";
 
 export default function HomePage() {
@@ -16,7 +15,6 @@ export default function HomePage() {
       <Project />
       <Testimonials />
       <CTA />
-      <BodyLandingPage />
       <Footer />
     </main>
   );

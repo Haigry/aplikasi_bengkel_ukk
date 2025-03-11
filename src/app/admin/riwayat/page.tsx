@@ -1,8 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BookingStatus, StatusTransaksi } from '@prisma/client';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
+import { handleError } from '@/utils/errorHandler';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Booking {
   id: number;
@@ -42,21 +44,27 @@ export default function RiwayatPage() {
     items: []
   });
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
+    if (loading) return; // Prevent multiple fetches while loading
+    
     try {
+      setLoading(true);
       const response = await fetch('/api/admin?model=booking');
+      if (!response.ok) throw new Error('Failed to fetch bookings');
+      
       const data = await response.json();
       setBookings(data);
     } catch (error) {
-      toast.error('Gagal memuat data riwayat');
+      handleError(error, 'Gagal memuat data riwayat');
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading]);
+
+  // Use debounce hook for fetch
+  useDebounce(() => {
+    fetchBookings();
+  }, 1000);
 
   const handleCreateRiwayat = async (bookingId: number) => {
     try {
@@ -70,19 +78,18 @@ export default function RiwayatPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Gagal membuat riwayat');
+        const error = await response.json();
+        throw new Error(error.message || 'Gagal membuat riwayat');
       }
 
       toast.success('Riwayat berhasil dibuat');
       setShowCreateModal(false);
       fetchBookings();
     } catch (error) {
-      toast.error('Gagal membuat riwayat');
+      handleError(error, 'Gagal membuat riwayat');
     }
   };
 
-  // ...rest of the UI code similar to previous antrian page...
-  // Add modal for creating riwayat
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -92,11 +99,9 @@ export default function RiwayatPage() {
         <p className="mt-2 text-gray-600">Kelola riwayat service pelanggan</p>
       </div>
 
-      {/* Similar booking cards layout but with additional button to create riwayat */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {bookings.map((booking) => (
           <div key={booking.id} className="bg-white rounded-lg shadow-md border border-gray-200">
-            {/* ...existing booking card content... */}
             <div className="p-4 border-t">
               <button
                 onClick={() => {
@@ -112,12 +117,10 @@ export default function RiwayatPage() {
         ))}
       </div>
 
-      {/* Create Riwayat Modal */}
       <Modal
-              isOpen={showCreateModal}
-              onClose={() => setShowCreateModal(false)}
-              title="Buat Riwayat Service" children={undefined}      >
-        {/* Add your riwayat creation form here */}
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Buat Riwayat Service" children={undefined}      >
       </Modal>
     </div>
   );
