@@ -5,8 +5,12 @@ import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 
 interface Kendaraan {
-  noPolisi: string;
+  id: string;
   merk: string;
+  tipe: string;
+  transmisi: string;
+  tahun: number;
+  CC: number;
   userId: number;
 }
 
@@ -20,8 +24,12 @@ export default function KendaraanPage() {
   const [vehicles, setVehicles] = useState<Kendaraan[]>([]);
   const [loading, setLoading] = useState(true);
   const [newVehicle, setNewVehicle] = useState({
-    noPolisi: '',
+    id: '',
     merk: '',
+    tipe: '',
+    transmisi: '',
+    tahun: new Date().getFullYear(),
+    CC: 0,
     userId: 0
   });
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
@@ -73,13 +81,21 @@ export default function KendaraanPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'kendaraan',
-          data: newVehicle
+          data: {
+            id: newVehicle.id,
+            merk: newVehicle.merk,
+            tipe: newVehicle.tipe || '',
+            transmisi: newVehicle.transmisi || '',
+            tahun: newVehicle.tahun || new Date().getFullYear(),
+            CC: newVehicle.CC || 0,
+            userId: newVehicle.userId
+          }
         })
       });
       toast.success('Vehicle added successfully');
       setIsAddingVehicle(false);
       fetchVehicles();
-      setNewVehicle({ noPolisi: '', merk: '', userId: 0 });
+      setNewVehicle({ id: '', merk: '', tipe: '', transmisi: '', tahun: new Date().getFullYear(), CC: 0, userId: 0 });
     } catch (error) {
       toast.error('Failed to add vehicle');
     }
@@ -92,7 +108,7 @@ export default function KendaraanPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'kendaraan',
-          id: editingVehicle?.noPolisi,
+          id: editingVehicle?.id,
           data
         })
       });
@@ -104,9 +120,9 @@ export default function KendaraanPage() {
     }
   };
 
-  const handleDelete = async (noPolisi: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      await fetch(`/api/admin?model=kendaraan&id=${noPolisi}`, {
+      await fetch(`/api/admin?model=kendaraan&id=${id}`, {
         method: 'DELETE'
       });
       toast.success('Vehicle deleted successfully');
@@ -162,8 +178,8 @@ export default function KendaraanPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">License Plate</label>
                   <input
                     type="text"
-                    value={newVehicle.noPolisi}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, noPolisi: e.target.value })}
+                    value={newVehicle.id}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, id: e.target.value })}
                     className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                     required
                   />
@@ -177,6 +193,46 @@ export default function KendaraanPage() {
                     onChange={(e) => setNewVehicle({ ...newVehicle, merk: e.target.value })}
                     className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                     required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                  <input
+                    type="text"
+                    value={newVehicle.tipe}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, tipe: e.target.value })}
+                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Transmission</label>
+                  <input
+                    type="text"
+                    value={newVehicle.transmisi}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, transmisi: e.target.value })}
+                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                  <input
+                    type="number"
+                    value={newVehicle.tahun}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, tahun: Number(e.target.value) })}
+                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CC</label>
+                  <input
+                    type="number"
+                    value={newVehicle.CC}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, CC: Number(e.target.value) })}
+                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                   />
                 </div>
               </div>
@@ -215,8 +271,8 @@ export default function KendaraanPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">License Plate</label>
                     <input
                       type="text"
-                      value={editingVehicle.noPolisi}
-                      onChange={(e) => setEditingVehicle({ ...editingVehicle, noPolisi: e.target.value })}
+                      value={editingVehicle.id}
+                      onChange={(e) => setEditingVehicle({ ...editingVehicle, id: e.target.value })}
                       className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                       required
                     />
@@ -230,6 +286,46 @@ export default function KendaraanPage() {
                       onChange={(e) => setEditingVehicle({ ...editingVehicle, merk: e.target.value })}
                       className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                       required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <input
+                      type="text"
+                      value={editingVehicle.tipe}
+                      onChange={(e) => setEditingVehicle({ ...editingVehicle, tipe: e.target.value })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Transmission</label>
+                    <input
+                      type="text"
+                      value={editingVehicle.transmisi}
+                      onChange={(e) => setEditingVehicle({ ...editingVehicle, transmisi: e.target.value })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                    <input
+                      type="number"
+                      value={editingVehicle.tahun}
+                      onChange={(e) => setEditingVehicle({ ...editingVehicle, tahun: Number(e.target.value) })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">CC</label>
+                    <input
+                      type="number"
+                      value={editingVehicle.CC}
+                      onChange={(e) => setEditingVehicle({ ...editingVehicle, CC: Number(e.target.value) })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                     />
                   </div>
                 </div>
@@ -294,8 +390,8 @@ export default function KendaraanPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {vehicles.map((vehicle) => (
-                    <tr key={vehicle.noPolisi} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{vehicle.noPolisi}</td>
+                    <tr key={vehicle.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{vehicle.id}</td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{vehicle.merk}</td>
                       <td className="px-6 py-4 space-x-2">
                         <button
@@ -305,7 +401,7 @@ export default function KendaraanPage() {
                           Edit
                         </button>
                         <button
-                          onClick={() => setDeleteConfirm(vehicle.noPolisi)}
+                          onClick={() => setDeleteConfirm(vehicle.id)}
                           className="text-red-600 hover:text-red-900 font-medium"
                         >
                           Delete

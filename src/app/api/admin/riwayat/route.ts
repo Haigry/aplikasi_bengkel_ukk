@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { BookingStatus } from '@prisma/client';
-
 export async function POST(req: Request) {
   try {
-    const { bookingId, karyawanId, kendaraanId, totalHarga, status, items } = await req.json();
+    const { 
+      bookingId, 
+      karyawanId, 
+      kendaraanId, 
+      totalHarga,
+      quantity,
+      harga,
+      serviceId,
+      sparepartId 
+    } = await req.json();
 
-    // Get the booking
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: { user: true }
@@ -16,17 +23,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Booking tidak ditemukan' }, { status: 404 });
     }
 
-    // Create riwayat
+    // Create riwayat with the new schema
     const riwayat = await prisma.riwayat.create({
       data: {
         userId: booking.userId,
         karyawanId,
         kendaraanId,
         totalHarga,
-        status,
-        items: {
-          create: items
-        }
+        quantity,
+        harga,
+        serviceId,
+        sparepartId,
       }
     });
 

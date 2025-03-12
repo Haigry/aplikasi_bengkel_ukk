@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { BookingStatus, StatusTransaksi } from '@prisma/client';
+import { BookingStatus } from '@/types';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 import { handleError } from '@/utils/errorHandler';
@@ -18,17 +18,31 @@ interface Booking {
   };
 }
 
+interface Riwayat {
+  id: number;
+  totalHarga: number;
+  quantity: number;
+  harga: number;
+  userId: number;
+  karyawanId: number;
+  kendaraanId: string;
+  serviceId?: number;
+  sparepartId?: number;
+  user: { name: string };
+  karyawan: { name: string };
+  kendaraan: { id: string; merk: string };
+  service?: { name: string };
+  sparepart?: { name: string };
+}
+
 interface CreateRiwayatForm {
   karyawanId: number;
   kendaraanId: string;
   totalHarga: number;
-  status: StatusTransaksi;
-  items: {
-    sparepartId?: number;
-    serviceId?: number;
-    quantity: number;
-    harga: number;
-  }[];
+  quantity: number;
+  harga: number;
+  serviceId?: number;
+  sparepartId?: number;
 }
 
 export default function RiwayatPage() {
@@ -40,8 +54,8 @@ export default function RiwayatPage() {
     karyawanId: 0,
     kendaraanId: '',
     totalHarga: 0,
-    status: 'PENDING',
-    items: []
+    quantity: 1,
+    harga: 0
   });
 
   const fetchBookings = useCallback(async () => {

@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import type { User, Karyawan, Sparepart, Service, Riwayat, Role } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client'
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-// Generic error handler
+// Remove individual type imports and use generated types
+type User = any;
+type Karyawan = any;
+type Sparepart = any;
+type Service = any;
+type Riwayat = any;
+type Role = 'ADMIN' | 'KARYAWAN' | 'CUSTOMER';
+
 const handleError = (error: any) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -94,33 +100,31 @@ export async function GET(request: Request) {
             include: {
               user: true,
               karyawan: true,
-              items: {
-                include: {
-                  sparepart: true,
-                  service: true
-                }
-              }
+              kendaraan: true,
+              service: true,
+              sparepart: true
             }
           })
           : await prisma.riwayat.findMany({
             include: {
               user: true,
               karyawan: true,
-              items: {
-                include: {
-                  sparepart: true,
-                  service: true
-                }
-              }
+              kendaraan: true,
+              service: true,
+              sparepart: true
             }
           })
         );
       case 'kendaraan':
         return NextResponse.json(
           id ? await prisma.kendaraan.findUnique({ 
-            where: { noPolisi: String(id) } 
+            where: { id: String(id) } 
           })
-          : await prisma.kendaraan.findMany()
+          : await prisma.kendaraan.findMany({
+            include: {
+              user: true
+            }
+          })
         );
       default:
         return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
@@ -159,7 +163,6 @@ export async function POST(request: Request) {
       const karyawan = await prisma.karyawan.create({
         data: {
           name: data.name,
-          email: data.email,
           position: data.position,
           user: {
             connect: {
@@ -197,13 +200,35 @@ export async function POST(request: Request) {
       const sparepart = await prisma.sparepart.create({
         data: {
           name: data.name,
-          description: data.description || '',
           harga: data.harga,
           stok: data.stok
         }
       });
 
       return NextResponse.json(sparepart);
+    }
+
+    if (model === 'riwayat') {
+      const riwayat = await prisma.riwayat.create({
+        data: {
+          userId: data.userId,
+          karyawanId: data.karyawanId,
+          kendaraanId: data.kendaraanId,
+          serviceId: data.serviceId,
+          sparepartId: data.sparepartId,
+          totalHarga: data.totalHarga,
+          quantity: data.quantity,
+          harga: data.harga
+        },
+        include: {
+          user: true,
+          karyawan: true,
+          kendaraan: true,
+          service: true,
+          sparepart: true
+        }
+      });
+      return NextResponse.json(riwayat);
     }
 
     switch (model) {
@@ -229,7 +254,6 @@ export async function POST(request: Request) {
         return NextResponse.json(await prisma.riwayat.create({
           data,
           include: {
-            items: true,
             user: true,
             karyawan: true
           }
@@ -245,8 +269,12 @@ export async function POST(request: Request) {
 
         const kendaraan = await prisma.kendaraan.create({
           data: {
-            noPolisi: data.noPolisi,
+            id: data.id,
             merk: data.merk,
+            tipe: data.tipe,
+            transmisi: data.transmisi,
+            tahun: data.tahun,
+            CC: data.CC,
             user: {
               connect: {
                 id: data.userId
@@ -326,7 +354,6 @@ export async function PUT(request: Request) {
             where: { id: Number(id) },
             data,
             include: {
-              items: true,
               user: true,
               karyawan: true
             }
@@ -335,7 +362,7 @@ export async function PUT(request: Request) {
       case 'kendaraan':
         return NextResponse.json(
           await prisma.kendaraan.update({
-            where: { noPolisi: String(id) },
+            where: { id: String(id) },
             data
           })
         );
@@ -383,10 +410,6 @@ export async function DELETE(request: Request) {
           })
         );
       case 'riwayat':
-        // Delete associated TransaksiItems first
-        await prisma.transaksiItem.deleteMany({
-          where: { transaksiId: Number(id) }
-        });
         return NextResponse.json(
           await prisma.riwayat.delete({
             where: { id: Number(id) }
@@ -395,7 +418,7 @@ export async function DELETE(request: Request) {
       case 'kendaraan':
         return NextResponse.json(
           await prisma.kendaraan.delete({
-            where: { noPolisi: String(id) }
+            where: { id: String(id) }
           })
         );
       default:

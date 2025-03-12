@@ -3,15 +3,24 @@ import React, { useEffect, useState } from 'react';
 import { styleConfig } from '@/styles/components';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
+import { BookingStatus } from '@/types';
 
 interface Order {
   id: number;
-  status: 'PENDING' | 'PROCESS' | 'COMPLETED' | 'CANCELLED';
   totalHarga: number;
+  quantity: number;
+  harga: number;
   userId: number;
   karyawanId: number;
+  kendaraanId: string;
+  serviceId?: number;
+  sparepartId?: number;
+  status: BookingStatus;  // Use BookingStatus from prisma
   user: { name: string };
   karyawan: { name: string };
+  kendaraan: { id: string; merk: string };
+  service?: { name: string };
+  sparepart?: { name: string };
 }
 
 interface User {
@@ -27,7 +36,10 @@ export default function OrdersPage() {
   const [newOrder, setNewOrder] = useState({
     userId: '',
     karyawanId: '',
+    kendaraanId: '',
     totalHarga: 0,
+    quantity: 1,
+    harga: 0,
     status: 'PENDING' as Order['status']
   });
   const [isAddingOrder, setIsAddingOrder] = useState(false);
@@ -42,7 +54,7 @@ export default function OrdersPage() {
     setIsLoading(true);
     try {
       const [ordersRes, usersRes, karyawanRes] = await Promise.all([
-        fetch('/api/admin?model=transaksi'),
+        fetch('/api/admin?model=riwayat'),
         fetch('/api/admin?model=user&role=CUSTOMER'), // Filter users by CUSTOMER role
         fetch('/api/admin?model=karyawan')
       ]);
@@ -73,11 +85,14 @@ export default function OrdersPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'transaksi',
+          model: 'riwayat',
           data: {
             ...newOrder,
             userId: parseInt(newOrder.userId),
-            karyawanId: parseInt(newOrder.karyawanId)
+            karyawanId: parseInt(newOrder.karyawanId),
+            totalHarga: Number(newOrder.totalHarga),
+            quantity: Number(newOrder.quantity),
+            harga: Number(newOrder.harga)
           }
         })
       });
@@ -131,15 +146,21 @@ export default function OrdersPage() {
     setDeleteConfirm(null);
   };
 
-  const getStatusColor = (status: Order['status']) => {
+  const getStatusColor = (status: BookingStatus) => {
     const colors = {
       PENDING: 'yellow',
-      PROCESS: 'blue',
-      COMPLETED: 'green',
+      CONFIRMED: 'green',
       CANCELLED: 'red'
-    };
-    return colors[status];
+    } as const;
+    return colors[status] || 'gray';
   };
+
+  const stats = [
+    { label: 'Total Orders', value: orders?.length || 0, color: 'blue' },
+    { label: 'Pending', value: orders?.filter(o => o?.status === 'PENDING')?.length || 0, color: 'yellow' },
+    { label: 'Confirmed', value: orders?.filter(o => o?.status === 'CONFIRMED')?.length || 0, color: 'green' },
+    { label: 'Cancelled', value: orders?.filter(o => o?.status === 'CANCELLED')?.length || 0, color: 'red' },
+  ];
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900"> 
@@ -164,12 +185,7 @@ export default function OrdersPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            {[
-              { label: 'Total Orders', value: orders?.length || 0, color: 'blue' },
-              { label: 'Pending', value: orders?.filter(o => o?.status === 'PENDING')?.length || 0, color: 'yellow' },
-              { label: 'Processing', value: orders?.filter(o => o?.status === 'PROCESS')?.length || 0, color: 'purple' },
-              { label: 'Completed', value: orders?.filter(o => o?.status === 'COMPLETED')?.length || 0, color: 'green' },
-            ].map((stat, index) => (
+            {stats.map((stat, index) => (
               <div key={index} className={styleConfig.card + ' p-6'}>
                 <p className="text-sm font-medium text-gray-600">{stat.label}</p>
                 <p className={`text-3xl font-bold text-${stat.color}-600 mt-2`}>
