@@ -12,9 +12,10 @@ model User {
   email            String    @unique
   password         String
   name             String?
+  noTelp           String?
+  alamat           String?
+  NoKTP            String?   @unique
   role             Role      @default(CUSTOMER)
-  resetToken       String?   // Add this for password reset
-  resetTokenExpiry DateTime? // Add this for password reset
   transaksi        Riwayat[]
   karyawan         Karyawan?
   createdAt        DateTime  @default(now())
@@ -39,6 +40,10 @@ model Karyawan {
 model Kendaraan {
   noPolisi  String    @id
   merk      String
+  tipe      String
+  transmisi String
+  tahun     Int
+  CC        Int
   userId    Int       // Add this to track vehicle owner
   user      User      @relation(fields: [userId], references: [id])
   transaksi Riwayat[]
@@ -59,10 +64,9 @@ model Booking {
 model Sparepart {
   id            Int             @id @default(autoincrement())
   name          String
-  description   String?
   harga         Float
   stok          Int             @default(0)
-  TransaksiItem TransaksiItem[]
+  TransaksiItem Riwayat[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 }
@@ -72,9 +76,7 @@ model Service {
   name          String
   description   String?
   harga         Float
-  TransaksiItem TransaksiItem[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  TransaksiItem Riwayat[]
 }
 
 model Riwayat {
@@ -82,42 +84,48 @@ model Riwayat {
   userId      Int
   karyawanId  Int
   kendaraanId String         // Add this for vehicle reference
-  totalHarga  Float          @default(0)
-  status      StatusTransaksi @default(PENDING)
-  items       TransaksiItem[]
+  bookingId   Int
+  sparepartId Int?
+  serviceId   Int?
+  totalHarga  Float           @default(0)
+  quantity    Int             @default(1)
+  harga       Float           @default(0)
   user        User            @relation(fields: [userId], references: [id])
   karyawan    Karyawan        @relation(fields: [karyawanId], references: [id])
   kendaraan   Kendaraan       @relation(fields: [kendaraanId], references: [noPolisi])
+  sparepart   Sparepart?      @relation(fields: [sparepartId], references: [id])
+  service     Service?        @relation(fields: [serviceId], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  RiwayatLaporan RiwayatLaporan[]
 }
 
-model TransaksiItem {
-  id          Int        @id @default(autoincrement())
-  transaksiId Int
-  sparepartId Int?
-  serviceId   Int?
-  quantity    Int        @default(1)
-  harga       Float      @default(0)
-  subtotal    Float      @default(0)
-  transaksi   Riwayat    @relation(fields: [transaksiId], references: [id], onDelete: Cascade)
-  sparepart   Sparepart? @relation(fields: [sparepartId], references: [id])
-  service     Service?   @relation(fields: [serviceId], references: [id])
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+model Laporan {
+  id              Int               @id @default(autoincrement())
+  tanggal         DateTime
+  periode         String           // Bisa berupa 'HARIAN', 'MINGGUAN', 'BULANAN'
+  omset           Float            @default(0)
+  jumlahServis    Int              @default(0)
+  jumlahSparepart Int              @default(0)
+  totalTransaksi  Int              @default(0)
+  riwayatLaporan  RiwayatLaporan[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model RiwayatLaporan {
+  laporanId  Int
+  riwayatId  Int
+  laporan    Laporan @relation(fields: [laporanId], references: [id])
+  riwayat    Riwayat @relation(fields: [riwayatId], references: [id])
+
+  @@id([laporanId, riwayatId])
 }
 
 enum Role {
   ADMIN
   KARYAWAN
   CUSTOMER
-}
-
-enum StatusTransaksi {
-  PENDING
-  PROCESS
-  COMPLETED
-  CANCELLED
 }
 
 enum BookingStatus {
