@@ -11,7 +11,10 @@ export default function RegisterForm() {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    noTelp: '',
+    alamat: '',
+    NoKTP: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -34,6 +37,9 @@ export default function RegisterForm() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          noTelp: formData.noTelp,
+          alamat: formData.alamat,
+          NoKTP: formData.NoKTP,
           role: 'CUSTOMER' // Default role for new registrations
         }),
       });
@@ -101,6 +107,57 @@ export default function RegisterForm() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="noTelp" className="block text-sm font-medium text-gray-700">
+                Nomor Telepon
+              </label>
+              <div className="mt-1">
+                <input
+                  id="noTelp"
+                  name="noTelp"
+                  type="tel"
+                  required
+                  value={formData.noTelp}
+                  onChange={(e) => setFormData({ ...formData, noTelp: e.target.value })}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="alamat" className="block text-sm font-medium text-gray-700">
+                Alamat
+              </label>
+              <div className="mt-1">
+                <textarea
+                  id="alamat"
+                  name="alamat"
+                  required
+                  value={formData.alamat}
+                  onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                  rows={3}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="NoKTP" className="block text-sm font-medium text-gray-700">
+                Nomor KTP
+              </label>
+              <div className="mt-1">
+                <input
+                  id="NoKTP"
+                  name="NoKTP"
+                  type="text"
+                  required
+                  value={formData.NoKTP}
+                  onChange={(e) => setFormData({ ...formData, NoKTP: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>

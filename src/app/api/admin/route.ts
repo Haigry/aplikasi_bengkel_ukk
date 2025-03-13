@@ -1,16 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient, Prisma, Role, BookingStatus } from '@prisma/client'
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
-
-// Remove individual type imports and use generated types
-type User = any;
-type Karyawan = any;
-type Sparepart = any;
-type Service = any;
-type Riwayat = any;
-type Role = 'ADMIN' | 'KARYAWAN' | 'CUSTOMER';
 
 const handleError = (error: any) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -25,107 +17,205 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const model = searchParams.get('model');
     const id = searchParams.get('id');
-    const role = searchParams.get('role');
-
-    if (model === 'booking') {
-      const bookings = await prisma.booking.findMany({
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
-        },
-        orderBy: {
-          date: 'desc'
-        }
-      });
-      return NextResponse.json(bookings);
-    }
-
-    if (model === 'karyawan') {
-      const karyawan = await prisma.karyawan.findMany({
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              role: true
-            }
-          }
-        }
-      });
-      return NextResponse.json(karyawan);
-    }
 
     switch (model) {
-      case 'user':
-        if (role) {
-          return NextResponse.json(
-            await prisma.user.findMany({
-              where: { role: role as Role }
-            })
-          );
-        }
+      case 'users':
         return NextResponse.json(
-          id ? await prisma.user.findUnique({ where: { id: Number(id) } }) 
-            : await prisma.user.findMany()
+          id ? 
+            await prisma.user.findUnique({
+              where: { id: Number(id) },
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                noTelp: true,
+                alamat: true,
+                NoKTP: true,
+                role: true,
+                karyawan: true,
+                kendaraan: true,
+                createdAt: true,
+                updatedAt: true
+              }
+            })
+          : await prisma.user.findMany({
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                noTelp: true,
+                alamat: true,
+                NoKTP: true,
+                role: true,
+                createdAt: true,
+                updatedAt: true
+              }
+            })
         );
+
       case 'karyawan':
         return NextResponse.json(
-          id ? await prisma.karyawan.findUnique({
-            where: { id: Number(id) },
-            include: { user: true }
-          })
+          id ?
+            await prisma.karyawan.findUnique({
+              where: { id: Number(id) },
+              include: {
+                user: true,
+                transaksi: true
+              }
+            })
           : await prisma.karyawan.findMany({
-            include: { user: true }
-          })
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                    noTelp: true
+                  }
+                }
+              }
+            })
         );
-      case 'sparepart':
-        return NextResponse.json(
-          id ? await prisma.sparepart.findUnique({ where: { id: Number(id) } })
-            : await prisma.sparepart.findMany()
-        );
-      case 'service':
-        return NextResponse.json(
-          id ? await prisma.service.findUnique({ where: { id: Number(id) } })
-            : await prisma.service.findMany()
-        );
-      case 'riwayat':
-        return NextResponse.json(
-          id ? await prisma.riwayat.findUnique({
-            where: { id: Number(id) },
-            include: {
-              user: true,
-              karyawan: true,
-              kendaraan: true,
-              service: true,
-              sparepart: true
-            }
-          })
-          : await prisma.riwayat.findMany({
-            include: {
-              user: true,
-              karyawan: true,
-              kendaraan: true,
-              service: true,
-              sparepart: true
-            }
-          })
-        );
+
       case 'kendaraan':
         return NextResponse.json(
-          id ? await prisma.kendaraan.findUnique({ 
-            where: { id: String(id) } 
-          })
+          id ?
+            await prisma.kendaraan.findUnique({
+              where: { id: String(id) },
+              include: {
+                user: true,
+                transaksi: true
+              }
+            })
           : await prisma.kendaraan.findMany({
-            include: {
-              user: true
-            }
-          })
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    noTelp: true
+                  }
+                }
+              }
+            })
         );
+
+      case 'service':
+        return NextResponse.json(
+          id ?
+            await prisma.service.findUnique({
+              where: { id: Number(id) },
+              include: {
+                transaksi: true
+              }
+            })
+          : await prisma.service.findMany()
+        );
+
+      case 'sparepart':
+        return NextResponse.json(
+          id ?
+            await prisma.sparepart.findUnique({
+              where: { id: Number(id) },
+              include: {
+                transaksi: true
+              }
+            })
+          : await prisma.sparepart.findMany()
+        );
+
+      case 'booking':
+        return NextResponse.json(
+          id ?
+            await prisma.booking.findUnique({
+              where: { id: Number(id) },
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    noTelp: true,
+                    email: true
+                  }
+                }
+              }
+            })
+          : await prisma.booking.findMany({
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    noTelp: true,
+                    email: true
+                  }
+                }
+              },
+              orderBy: {
+                date: 'desc'
+              }
+            })
+        );
+
+      case 'riwayat':
+        return NextResponse.json(
+          id ?
+            await prisma.riwayat.findUnique({
+              where: { id: Number(id) },
+              include: {
+                user: true,
+                karyawan: true,
+                kendaraan: true,
+                service: true,
+                sparepart: true,
+                riwayatLaporan: true
+              }
+            })
+          : await prisma.riwayat.findMany({
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    noTelp: true
+                  }
+                },
+                karyawan: true,
+                kendaraan: true,
+                service: true,
+                sparepart: true
+              }
+            })
+        );
+
+      case 'laporan':
+        return NextResponse.json(
+          id ?
+            await prisma.laporan.findUnique({
+              where: { id: Number(id) },
+              include: {
+                riwayatLaporan: {
+                  include: {
+                    riwayat: true
+                  }
+                }
+              }
+            })
+          : await prisma.laporan.findMany({
+              include: {
+                riwayatLaporan: {
+                  include: {
+                    riwayat: {
+                      include: {
+                        user: true,
+                        service: true,
+                        sparepart: true
+                      }
+                    }
+                  }
+                }
+              },
+              orderBy: {
+                tanggal: 'desc'
+              }
+            })
+        );
+
       default:
         return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
     }
@@ -138,100 +228,138 @@ export async function POST(request: Request) {
   try {
     const { model, data } = await request.json();
 
-    if (model === 'karyawan') {
-      // Validate required fields
-      if (!data.name || !data.email || !data.position || !data.userId) {
-        return NextResponse.json(
-          { error: 'Missing required fields' },
-          { status: 400 }
-        );
-      }
-
-      // Check if user exists and has KARYAWAN role
-      const user = await prisma.user.findUnique({
-        where: { id: data.userId }
-      });
-
-      if (!user || user.role !== 'KARYAWAN') {
-        return NextResponse.json(
-          { error: 'Invalid user or user role' },
-          { status: 400 }
-        );
-      }
-
-      // Create karyawan with connection to existing user
-      const karyawan = await prisma.karyawan.create({
-        data: {
-          name: data.name,
-          position: data.position,
-          user: {
-            connect: {
-              id: data.userId
-            }
-          }
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              role: true
-            }
-          }
-        }
-      });
-
-      return NextResponse.json({
-        success: true,
-        data: karyawan
-      });
-    }
-
-    // Validate sparepart data
-    if (model === 'sparepart') {
-      if (!data.name || data.harga === undefined || data.stok === undefined) {
-        return NextResponse.json(
-          { error: 'Missing required fields' },
-          { status: 400 }
-        );
-      }
-
-      const sparepart = await prisma.sparepart.create({
-        data: {
-          name: data.name,
-          harga: data.harga,
-          stok: data.stok
-        }
-      });
-
-      return NextResponse.json(sparepart);
-    }
-
-    if (model === 'riwayat') {
-      const riwayat = await prisma.riwayat.create({
-        data: {
-          userId: data.userId,
-          karyawanId: data.karyawanId,
-          kendaraanId: data.kendaraanId,
-          serviceId: data.serviceId,
-          sparepartId: data.sparepartId,
-          totalHarga: data.totalHarga,
-          quantity: data.quantity,
-          harga: data.harga
-        },
-        include: {
-          user: true,
-          karyawan: true,
-          kendaraan: true,
-          service: true,
-          sparepart: true
-        }
-      });
-      return NextResponse.json(riwayat);
-    }
-
     switch (model) {
+      case 'booking':
+        if (!data.userId || !data.date || !data.message) {
+          return NextResponse.json(
+            { error: 'Missing required fields' },
+            { status: 400 }
+          );
+        }
+        
+        const lastBooking = await prisma.booking.findFirst({
+          orderBy: { queue: 'desc' }
+        });
+        
+        const booking = await prisma.booking.create({
+          data: {
+            userId: data.userId,
+            date: new Date(data.date),
+            message: data.message,
+            queue: (lastBooking?.queue ?? 0) + 1,
+            status: data.status as BookingStatus ?? 'PENDING'
+          }
+        });
+        return NextResponse.json(booking);
+
+      case 'laporan':
+        const laporan = await prisma.laporan.create({
+          data: {
+            tanggal: new Date(data.tanggal),
+            periode: data.periode,
+            omset: data.omset,
+            jumlahServis: data.jumlahServis,
+            jumlahSparepart: data.jumlahSparepart,
+            totalTransaksi: data.totalTransaksi,
+            riwayatLaporan: {
+              create: data.riwayatIds.map((riwayatId: number) => ({
+                riwayatId
+              }))
+            }
+          }
+        });
+        return NextResponse.json(laporan);
+
+      case 'karyawan':
+        // Validate required fields
+        if (!data.name || !data.email || !data.position || !data.userId) {
+          return NextResponse.json(
+            { error: 'Missing required fields' },
+            { status: 400 }
+          );
+        }
+
+        // Check if user exists and has KARYAWAN role
+        const user = await prisma.user.findUnique({
+          where: { id: data.userId }
+        });
+
+        if (!user || user.role !== 'KARYAWAN') {
+          return NextResponse.json(
+            { error: 'Invalid user or user role' },
+            { status: 400 }
+          );
+        }
+
+        // Create karyawan with connection to existing user
+        const karyawan = await prisma.karyawan.create({
+          data: {
+            name: data.name,
+            position: data.position,
+            user: {
+              connect: {
+                id: data.userId
+              }
+            }
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true
+              }
+            }
+          }
+        });
+
+        return NextResponse.json({
+          success: true,
+          data: karyawan
+        });
+
+      // Validate sparepart data
+      case 'sparepart':
+        if (!data.name || data.harga === undefined || data.stok === undefined) {
+          return NextResponse.json(
+            { error: 'Missing required fields' },
+            { status: 400 }
+          );
+        }
+
+        const sparepart = await prisma.sparepart.create({
+          data: {
+            name: data.name,
+            harga: data.harga,
+            stok: data.stok
+          }
+        });
+
+        return NextResponse.json(sparepart);
+
+      case 'riwayat':
+        const riwayat = await prisma.riwayat.create({
+          data: {
+            userId: data.userId,
+            karyawanId: data.karyawanId,
+            kendaraanId: data.kendaraanId,
+            serviceId: data.serviceId,
+            sparepartId: data.sparepartId,
+            totalHarga: data.totalHarga,
+            quantity: data.quantity,
+            harga: data.harga
+          },
+          include: {
+            user: true,
+            karyawan: true,
+            kendaraan: true,
+            service: true,
+            sparepart: true
+          }
+        });
+        return NextResponse.json(riwayat);
+
       case 'user':
         // Hash password before creating user
         const hashedPassword = await bcrypt.hash(data.password, 10);

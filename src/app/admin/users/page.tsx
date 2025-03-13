@@ -1,17 +1,31 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { User } from '@prisma/client';
+import { User, Role } from '@prisma/client';
 import { styleConfig } from '@/styles/components';
 import Modal from '@/components/common/Modal';
 import { toast } from 'react-hot-toast';
 
+// Update User type to match schema
+interface UserFormData {
+  name?: string;
+  email: string;
+  password?: string;
+  noTelp?: string;
+  alamat?: string;
+  NoKTP?: string;
+  role: Role;
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<UserFormData>({
     name: '',
     email: '',
     password: '',
+    noTelp: '',
+    alamat: '',
+    NoKTP: '',
     role: 'CUSTOMER'
   });
   const [isAddingUser, setIsAddingUser] = useState(false);
@@ -29,7 +43,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin?model=user');
+      const response = await fetch('/api/admin?model=users');  // Changed from 'user' to 'users'
       const data = await response.json();
       setUsers(Array.isArray(data) ? data : []);
       toast.success('Data loaded successfully');
@@ -43,7 +57,7 @@ export default function UsersPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await fetch(`/api/admin?model=user&id=${id}`, {
+      await fetch(`/api/admin?model=users&id=${id}`, {  // Changed from 'user' to 'users'
         method: 'DELETE',
       });
       toast.success('User deleted successfully');
@@ -56,18 +70,31 @@ export default function UsersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch('/api/admin', {
+      const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'user',
+          model: 'users',
           data: newUser
         })
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to create user');
+      }
+
       toast.success('User added successfully');
       setIsAddingUser(false);
       fetchUsers();
-      setNewUser({ name: '', email: '', password: '', role: 'CUSTOMER' });
+      setNewUser({
+        name: '',
+        email: '',
+        password: '',
+        noTelp: '',
+        alamat: '',
+        NoKTP: '',
+        role: 'CUSTOMER'
+      });
     } catch (error) {
       toast.error('Failed to add user');
     }
@@ -139,25 +166,59 @@ export default function UsersPage() {
           >
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
-                    required
-                  />
+                {/* Basic Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                      required
+                    />
+                  </div>
                 </div>
 
+                {/* Contact Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input
+                      type="tel"
+                      value={newUser.noTelp}
+                      onChange={(e) => setNewUser({ ...newUser, noTelp: e.target.value })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">KTP Number</label>
+                    <input
+                      type="text"
+                      value={newUser.NoKTP}
+                      onChange={(e) => setNewUser({ ...newUser, NoKTP: e.target.value })}
+                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
+                    />
+                  </div>
+                </div>
+
+                {/* Address */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <textarea
+                    value={newUser.alamat}
+                    onChange={(e) => setNewUser({ ...newUser, alamat: e.target.value })}
                     className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
-                    required
+                    rows={3}
                   />
                 </div>
 
@@ -176,7 +237,7 @@ export default function UsersPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                   <select
                     value={newUser.role}
-                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value as Role })}
                     className="w-full rounded-md border border-gray-300 shadow-sm p-2.5"
                   >
                     <option value="CUSTOMER">Customer</option>
@@ -285,7 +346,9 @@ export default function UsersPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KTP</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -294,7 +357,9 @@ export default function UsersPage() {
                   <tr key={user.id}>
                     <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{user.noTelp}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{user.NoKTP}</td>
                     <td className="px-6 py-4 space-x-2">
                       <button
                         onClick={() => setEditingUser(user)}

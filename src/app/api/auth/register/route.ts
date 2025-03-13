@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '@/lib/auth/password';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, password, name } = body;
+    const { email, password, name, noTelp, alamat, NoKTP } = await request.json();
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -24,13 +21,16 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Create user
+    // Create user with optional fields
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        name,
-        role: 'CUSTOMER'
+        name: name || null,
+        noTelp: noTelp || null,
+        alamat: alamat || null,
+        NoKTP: NoKTP || null,
+        role: 'CUSTOMER',
       }
     });
 
@@ -39,13 +39,17 @@ export async function POST(request: Request) {
         id: user.id,
         email: user.email,
         name: user.name,
+        noTelp: user.noTelp,
+        alamat: user.alamat,
+        NoKTP: user.NoKTP,
         role: user.role
       }
     });
 
   } catch (error) {
+    console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Terjadi kesalahan saat mendaftar' },
       { status: 500 }
     );
   }

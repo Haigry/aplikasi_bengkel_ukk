@@ -28,7 +28,7 @@ model User {
   password  String
   name      String?
   noTelp    String?
-  alamat    String?
+  alamat    String?   @db.Text
   NoKTP     String?   @unique
   role      Role      @default(CUSTOMER)
   

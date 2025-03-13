@@ -24,8 +24,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { href: '/admin/', label: 'Dashboard', icon: HomeIcon },
     { href: '/admin/users', label: 'Users', icon: UserGroupIcon },
     { href: '/admin/products', label: 'Sparepart', icon: WrenchScrewdriverIcon },
-    { href: '/admin/orders', label: 'Orders', icon: ShoppingCartIcon },
-    { href: '/admin/antrian', label: 'booking', icon: QueueListIcon },
+    { href: '/admin/order', label: 'Order', icon: ShoppingCartIcon },
+    { href: '/admin/booking', label: 'booking', icon: QueueListIcon },
     { href: '/admin/kendaraan', label: 'Kendaraan', icon: TruckIcon },
     { href: '/admin/karyawan', label: 'Karyawan', icon: UserIcon },
   ];

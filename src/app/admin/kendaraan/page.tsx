@@ -354,7 +354,6 @@ export default function KendaraanPage() {
             isOpen={!!deleteConfirm}
             onClose={() => setDeleteConfirm(null)}
             title="Confirm Delete"
-            maxWidth="max-w-md"
           >
             <p className="mb-4">Are you sure you want to delete this vehicle?</p>
             <div className="flex justify-end gap-2">
