@@ -42,7 +42,7 @@ export default function LoginForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <img src="/BENGKEL.png" alt="Logo" className="mx-auto h-16 w-auto" />
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Login ke Bengkel Pro
+          Login ke Bengkel
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Atau{' '}

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { BookingStatus } from '@prisma/client';
 import { toast } from 'react-hot-toast';
 import { FaCalendarAlt, FaClock, FaUserCircle } from 'react-icons/fa';
+import Pagination from '@/components/common/Pagination';
 
 interface Booking {
   id: number;
@@ -21,6 +22,8 @@ export default function AntrianPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeStatus, setActiveStatus] = useState<BookingStatus | 'ALL'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   useEffect(() => {
     fetchBookings();
@@ -81,6 +84,11 @@ export default function AntrianPage() {
     ? bookings 
     : bookings.filter(booking => booking.status === activeStatus);
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -127,7 +135,7 @@ export default function AntrianPage() {
 
       {/* Booking Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredBookings.map((booking) => (
+        {currentBookings.map((booking) => (
           <div 
             key={booking.id}
             className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden"
@@ -172,6 +180,15 @@ export default function AntrianPage() {
             </div>
           </div>
         ))}
+        <div className="col-span-full">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            limit={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onLimitChange={setItemsPerPage}
+          />
+        </div>
       </div>
 
       {filteredBookings.length === 0 && (

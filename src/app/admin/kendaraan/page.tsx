@@ -60,7 +60,7 @@ export default function KendaraanPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin?model=user');
+      const response = await fetch('/api/admin?model=users');
       const data = await response.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -76,28 +76,43 @@ export default function KendaraanPage() {
     }
 
     try {
-      await fetch('/api/admin', {
+      const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'kendaraan',
           data: {
-            id: newVehicle.id,
-            merk: newVehicle.merk,
-            tipe: newVehicle.tipe || '',
-            transmisi: newVehicle.transmisi || '',
-            tahun: newVehicle.tahun || new Date().getFullYear(),
-            CC: newVehicle.CC || 0,
-            userId: newVehicle.userId
+            id: String(newVehicle.id).trim(), // Ensure clean string
+            merk: newVehicle.merk.trim(),
+            tipe: newVehicle.tipe?.trim() || null,
+            transmisi: newVehicle.transmisi?.trim() || null,
+            tahun: newVehicle.tahun ? Number(newVehicle.tahun) : null,
+            CC: newVehicle.CC ? Number(newVehicle.CC) : null,
+            userId: Number(newVehicle.userId)
           }
         })
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to add vehicle');
+      }
+
       toast.success('Vehicle added successfully');
       setIsAddingVehicle(false);
       fetchVehicles();
-      setNewVehicle({ id: '', merk: '', tipe: '', transmisi: '', tahun: new Date().getFullYear(), CC: 0, userId: 0 });
-    } catch (error) {
-      toast.error('Failed to add vehicle');
+      setNewVehicle({
+        id: '',
+        merk: '',
+        tipe: '',
+        transmisi: '',
+        tahun: new Date().getFullYear(),
+        CC: 0,
+        userId: 0
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add vehicle');
+      console.error('Error:', error);
     }
   };
 

@@ -95,7 +95,8 @@ model Sparepart {
   stok        Int       @default(0)
   
   // Relations
-  transaksi   Riwayat[]
+  transaksi     Riwayat[]
+  riwayatItems  RiwayatSparepart[]
   
   // Timestamps
   createdAt   DateTime  @default(now())
@@ -130,13 +131,14 @@ model Riwayat {
   userId      Int
   karyawanId  Int
   kendaraanId String
-  sparepartId Int?
+  sparepartId Int?          // This can be removed if not needed
   serviceId   Int?
   
   user        User      @relation(fields: [userId], references: [id])
   karyawan    Karyawan  @relation(fields: [karyawanId], references: [id])
   kendaraan   Kendaraan @relation(fields: [kendaraanId], references: [id])
-  sparepart   Sparepart? @relation(fields: [sparepartId], references: [id])
+  sparepart   Sparepart? @relation(fields: [sparepartId], references: [id])  // Keep this for backward compatibility
+  spareParts  RiwayatSparepart[]  // Add this new relation
   service     Service?   @relation(fields: [serviceId], references: [id])
   
   riwayatLaporan RiwayatLaporan[]
@@ -173,4 +175,21 @@ model RiwayatLaporan {
   riwayat    Riwayat @relation(fields: [riwayatId], references: [id])
 
   @@id([laporanId, riwayatId])
+}
+
+// Add new model for sparepart items in a transaction
+model RiwayatSparepart {
+  id          Int       @id @default(autoincrement())
+  riwayatId   Int
+  sparepartId Int
+  quantity    Int       @default(1)
+  harga       Float     // Price at time of purchase
+  
+  // Relations
+  riwayat     Riwayat    @relation(fields: [riwayatId], references: [id])
+  sparepart   Sparepart  @relation(fields: [sparepartId], references: [id])
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

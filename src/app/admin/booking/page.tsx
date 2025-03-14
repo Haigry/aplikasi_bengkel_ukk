@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { User, Kendaraan, Booking, Role, Service } from '@prisma/client';
 import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
+import Pagination from '@/components/common/Pagination';
 
 interface BookingFormData {
   user: {
@@ -65,11 +66,13 @@ export default function BookingPage() {
     }
   });
   const [services, setServices] = useState<Service[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'cancelled'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'cancelled' | 'ALL'>('pending');
   const [vehicles, setVehicles] = useState<Kendaraan[]>([]);
   const [userVehicles, setUserVehicles] = useState<Kendaraan[]>([]);
   const [isNewVehicle, setIsNewVehicle] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<Kendaraan | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   useEffect(() => {
     fetchBookings();
@@ -85,9 +88,19 @@ export default function BookingPage() {
   };
 
   const fetchUsers = async () => {
-    const res = await fetch('/api/admin?model=users');
-    const data = await res.json();
-    setExistingUsers(data);
+    try {
+      const res = await fetch('/api/admin?model=users'); // Changed from 'user' to 'users'
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setExistingUsers(data);
+      } else {
+        console.error('Expected array of users but got:', data);
+        setExistingUsers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setExistingUsers([]);
+    }
   };
 
   const fetchServices = async () => {
@@ -134,7 +147,7 @@ export default function BookingPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'users',
+            model: 'user',
             data: formData.user
           })
         });
@@ -176,7 +189,14 @@ export default function BookingPage() {
     }
   };
 
-  const filteredBookings = bookings.filter(booking => booking.status === activeTab.toUpperCase());
+  const filteredBookings = activeTab === 'ALL' 
+    ? bookings 
+    : bookings.filter(booking => booking.status === activeTab.toUpperCase());
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
 
   const handleUpdateStatus = async (id: number, status: string) => {
     try {
@@ -263,11 +283,15 @@ export default function BookingPage() {
                       onChange={(e) => handleUserSelect(e.target.value)}
                     >
                       <option value="">New Customer</option>
-                      {existingUsers.map(user => (
-                        <option key={user.id} value={user.id}>
-                          {user.name} - {user.noTelp}
-                        </option>
-                      ))}
+                      {existingUsers && existingUsers.length > 0 ? (
+                        existingUsers.map(user => (
+                          <option key={user.id} value={user.id}>
+                            {user.name} - {user.noTelp}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No users found</option>
+                      )}
                     </select>
                   </div>
 
@@ -568,7 +592,7 @@ export default function BookingPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredBookings.map((booking) => (
+                {currentBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">{booking.queue}</td>
                     <td className="px-6 py-4">
@@ -618,6 +642,13 @@ export default function BookingPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              limit={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onLimitChange={setItemsPerPage}
+            />
           </div>
         </div>
       </div>

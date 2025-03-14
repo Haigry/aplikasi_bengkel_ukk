@@ -17,41 +17,49 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const model = searchParams.get('model');
     const id = searchParams.get('id');
+    const role = searchParams.get('role');
 
     switch (model) {
       case 'users':
-        return NextResponse.json(
-          id ? 
+        try {
+          const whereClause = role ? 
+            { role: role as Role } : 
+            {};
+          const userSelect = {
+            id: true,
+            email: true,
+            name: true,
+            noTelp: true,
+            alamat: true,
+            NoKTP: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true
+          };
+
+          const result = id ? 
             await prisma.user.findUnique({
               where: { id: Number(id) },
               select: {
-                id: true,
-                email: true,
-                name: true,
-                noTelp: true,
-                alamat: true,
-                NoKTP: true,
-                role: true,
+                ...userSelect,
                 karyawan: true,
                 kendaraan: true,
-                createdAt: true,
-                updatedAt: true
               }
             })
-          : await prisma.user.findMany({
-              select: {
-                id: true,
-                email: true,
-                name: true,
-                noTelp: true,
-                alamat: true,
-                NoKTP: true,
-                role: true,
-                createdAt: true,
-                updatedAt: true
-              }
-            })
-        );
+            : await prisma.user.findMany({
+              where: whereClause,
+              select: userSelect
+            });
+
+          if (id && !result) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+          }
+
+          return NextResponse.json(result);
+        } catch (error) {
+          console.error('Error fetching users:', error);
+          return handleError(error);
+        }
 
       case 'karyawan':
         return NextResponse.json(
@@ -104,10 +112,35 @@ export async function GET(request: Request) {
             await prisma.service.findUnique({
               where: { id: Number(id) },
               include: {
-                transaksi: true
+                transaksi: {
+                  include: {
+                    user: {
+                      select: {
+                        name: true,
+                        noTelp: true
+                      }
+                    }
+                  }
+                }
               }
             })
-          : await prisma.service.findMany()
+          : await prisma.service.findMany({
+              include: {
+                transaksi: {
+                  include: {
+                    user: {
+                      select: {
+                        name: true,
+                        noTelp: true
+                      }
+                    }
+                  }
+                }
+              },
+              orderBy: {
+                name: 'asc'
+              }
+            })
         );
 
       case 'sparepart':
@@ -345,9 +378,15 @@ export async function POST(request: Request) {
             karyawanId: data.karyawanId,
             kendaraanId: data.kendaraanId,
             serviceId: data.serviceId,
-            sparepartId: data.sparepartId,
+            // Handle multiple parts in a transaction
+            spareParts: {
+              create: data.spareParts.map((part: { id: any; quantity: any; harga: any; }) => ({
+                sparepartId: part.id,
+                quantity: part.quantity,
+                harga: part.harga
+              }))
+            },
             totalHarga: data.totalHarga,
-            quantity: data.quantity,
             harga: data.harga
           },
           include: {
@@ -355,63 +394,119 @@ export async function POST(request: Request) {
             karyawan: true,
             kendaraan: true,
             service: true,
-            sparepart: true
-          }
-        });
-        return NextResponse.json(riwayat);
-
-      case 'user':
-        // Hash password before creating user
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        return NextResponse.json(
-          await prisma.user.create({ 
-            data: {
-              ...data,
-              password: hashedPassword
-            }
-          })
-        );
-        
-      case 'karyawan':
-        return NextResponse.json(await prisma.karyawan.create({ data }));
-      case 'sparepart':
-        return NextResponse.json(await prisma.sparepart.create({ data }));
-      case 'service':
-        return NextResponse.json(await prisma.service.create({ data }));
-      case 'riwayat':
-        return NextResponse.json(await prisma.riwayat.create({
-          data,
-          include: {
-            user: true,
-            karyawan: true
-          }
-        }));
-      case 'kendaraan':
-        // Validate kendaraan data
-        if (!data.noPolisi || !data.merk || !data.userId) {
-          return NextResponse.json(
-            { error: 'Missing required fields (noPolisi, merk, userId)' },
-            { status: 400 }
-          );
-        }
-
-        const kendaraan = await prisma.kendaraan.create({
-          data: {
-            id: data.id,
-            merk: data.merk,
-            tipe: data.tipe,
-            transmisi: data.transmisi,
-            tahun: data.tahun,
-            CC: data.CC,
-            user: {
-              connect: {
-                id: data.userId
+            spareParts: {
+              include: {
+                sparepart: true
               }
             }
           }
         });
+        
+        // Update sparepart stock
+        await Promise.all(data.spareParts.map((part: { id: any; quantity: any; }) => 
+          prisma.sparepart.update({
+            where: { id: part.id },
+            data: {
+              stok: {
+                decrement: part.quantity
+              }
+            }
+          })
+        ));
+      
+        return NextResponse.json(riwayat);
 
-        return NextResponse.json(kendaraan);
+      case 'user':
+      case 'users':
+        // Validate required fields
+        if (!data.email || !data.password || !data.role) {
+          return NextResponse.json(
+            { error: 'Email, password and role are required' },
+            { status: 400 }
+          );
+        }
+
+        // Hash password before creating user
+        const hashedPassword = await bcrypt.hash(data.password, 10);
+        
+        const userData = {
+          email: data.email,
+          password: hashedPassword,
+          role: data.role,
+          name: data.name || null,
+          noTelp: data.noTelp || null,
+          alamat: data.alamat || null,
+          NoKTP: data.NoKTP || null
+        };
+
+        const newUser = await prisma.user.create({ 
+          data: userData,
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            noTelp: true,
+            alamat: true,
+            NoKTP: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        });
+
+        return NextResponse.json(newUser);
+
+      case 'service':
+        // Validate service data
+        if (!data.name || data.harga === undefined) {
+          return NextResponse.json(
+            { error: 'Name and price are required' },
+            { status: 400 }
+          );
+        }
+
+        const service = await prisma.service.create({
+          data: {
+            name: data.name,
+            description: data.description,
+            harga: Number(data.harga)
+          },
+          include: {
+            transaksi: true
+          }
+        });
+
+        return NextResponse.json(service);
+      case 'kendaraan':
+        // Validate kendaraan data
+        if (!data.id || !data.merk || !data.userId) {
+          return NextResponse.json(
+            { error: 'Missing required fields (id, merk, userId)' },
+            { status: 400 }
+          );
+        }
+
+        try {
+          const kendaraan = await prisma.kendaraan.create({
+            data: {
+              id: String(data.id), // Ensure id is string
+              merk: data.merk,
+              tipe: data.tipe || null,
+              transmisi: data.transmisi || null,
+              tahun: data.tahun ? Number(data.tahun) : 0,
+              CC: data.CC ? Number(data.CC) : 0,
+              userId: Number(data.userId), // Ensure userId is number
+            }
+          });
+          return NextResponse.json(kendaraan);
+        } catch (error) {
+          console.error('Kendaraan creation error:', error);
+          return NextResponse.json(
+            { error: 'Failed to create kendaraan', details: error },
+            { status: 400 }
+          );
+        }
+
       default:
         return NextResponse.json({ error: 'Invalid model' }, { status: 400 });
     }
@@ -470,10 +565,25 @@ export async function PUT(request: Request) {
           })
         );
       case 'service':
+        // Validate service data
+        if (!data.name || data.harga === undefined) {
+          return NextResponse.json(
+            { error: 'Name and price are required' },
+            { status: 400 }
+          );
+        }
+
         return NextResponse.json(
           await prisma.service.update({
             where: { id: Number(id) },
-            data
+            data: {
+              name: data.name,
+              description: data.description,
+              harga: Number(data.harga)
+            },
+            include: {
+              transaksi: true
+            }
           })
         );
       case 'riwayat':
@@ -532,6 +642,18 @@ export async function DELETE(request: Request) {
           })
         );
       case 'service':
+        // Check if service is being used in any transactions
+        const serviceInUse = await prisma.riwayat.findFirst({
+          where: { serviceId: Number(id) }
+        });
+
+        if (serviceInUse) {
+          return NextResponse.json(
+            { error: 'Cannot delete service that is being used in transactions' },
+            { status: 400 }
+          );
+        }
+
         return NextResponse.json(
           await prisma.service.delete({
             where: { id: Number(id) }

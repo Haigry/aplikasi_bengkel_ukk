@@ -10,7 +10,9 @@ import {
   ShoppingCartIcon,
   TruckIcon,
   UserIcon,
-  QueueListIcon
+  QueueListIcon,
+  WrenchIcon, // Add this import
+  DocumentChartBarIcon // Add this import
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -23,11 +25,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const menuItems = [
     { href: '/admin/', label: 'Dashboard', icon: HomeIcon },
     { href: '/admin/users', label: 'Users', icon: UserGroupIcon },
+    { href: '/admin/services', label: 'Services', icon: WrenchIcon }, // Add Services page
     { href: '/admin/products', label: 'Sparepart', icon: WrenchScrewdriverIcon },
-    { href: '/admin/order', label: 'Order', icon: ShoppingCartIcon },
-    { href: '/admin/booking', label: 'booking', icon: QueueListIcon },
+    { href: '/admin/orders', label: 'Orders', icon: ShoppingCartIcon },
+    { href: '/admin/booking', label: 'Booking', icon: QueueListIcon },
     { href: '/admin/kendaraan', label: 'Kendaraan', icon: TruckIcon },
     { href: '/admin/karyawan', label: 'Karyawan', icon: UserIcon },
+    { href: '/admin/reports', label: 'Reports', icon: DocumentChartBarIcon }, // Add Reports page
   ];
 
   return (

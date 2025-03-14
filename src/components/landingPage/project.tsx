@@ -42,14 +42,14 @@ const Project: React.FC = () => {
                         </ul>
                     </div>
                     <img className="hidden w-full mb-4 rounded-lg lg:mb-0 lg:flex" 
-                         src="/images/workshop-management.jpg" 
+                         src="/efficient.jpg" 
                          alt="dashboard feature"/>
                 </div>
 
                 {/* Second Feature Section */}
                 <div className="items-center gap-8 lg:grid lg:grid-cols-2 xl:gap-16">
                     <img className="hidden w-full mb-4 rounded-lg lg:mb-0 lg:flex" 
-                         src="/images/customer-service.jpg" 
+                         src="/user_experience.jpg" 
                          alt="feature image"/>
                     <div className="text-gray-500 sm:text-lg dark:text-gray-400">
                         <h2 className="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white">

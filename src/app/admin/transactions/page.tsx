@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Riwayat, User, Service, Sparepart } from '@prisma/client';
 import Receipt from '@/components/Receipt';
 import Modal from '@/components/common/Modal';
+import Pagination from '@/components/common/Pagination';
 
 // Add interface for transaction with relations
 interface TransactionWithRelations extends Riwayat {
@@ -17,6 +18,8 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionWithRelations[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithRelations | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   useEffect(() => {
     fetchTransactions();
@@ -33,6 +36,12 @@ export default function TransactionsPage() {
       setLoading(false);
     }
   };
+
+  // Add pagination calculation
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
 
   return (
     <div className="p-6">
@@ -54,7 +63,7 @@ export default function TransactionsPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((transaction) => (
+            {currentTransactions.map((transaction) => (
               <tr key={transaction.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">#{transaction.id}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{transaction.user?.name}</td>
@@ -78,6 +87,13 @@ export default function TransactionsPage() {
             ))}
           </tbody>
         </table>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          limit={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onLimitChange={setItemsPerPage}
+        />
       </div>
 
       <Modal

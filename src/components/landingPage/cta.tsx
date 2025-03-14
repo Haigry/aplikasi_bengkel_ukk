@@ -9,7 +9,7 @@ const CTA: React.FC = () => {
 
   const handleBooking = () => {
     if (session) {
-      router.push('/booking');
+      router.push('/customer/booking');
     } else {
       router.push('/login?redirect=/booking');
     }

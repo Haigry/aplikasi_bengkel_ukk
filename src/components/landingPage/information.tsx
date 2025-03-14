@@ -53,7 +53,7 @@ const Information: React.FC = () => {
 
                     <div className="relative">
                         <div className="relative z-10 rounded-xl overflow-hidden shadow-2xl">
-                            <img src="/images/workshop-hero.jpg" alt="Bengkel Modern" 
+                            <img src="/Hero.jpg" alt="Bengkel Modern" 
                                  className="w-full h-[600px] object-cover" />
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 transform rotate-6 scale-105 rounded-xl -z-10">

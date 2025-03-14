@@ -10,7 +10,6 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [newProduct, setNewProduct] = useState({
     name: '',
-    description: '',
     harga: 0,
     stok: 0
   });
@@ -43,7 +42,6 @@ export default function ProductsPage() {
           model: 'sparepart',
           data: {
             name: newProduct.name,
-            description: newProduct.description || '',
             harga: parseInt(String(newProduct.harga)),
             stok: parseInt(String(newProduct.stok))
           }
@@ -58,7 +56,7 @@ export default function ProductsPage() {
       toast.success('Product added successfully');
       setIsAddingProduct(false);
       fetchProducts();
-      setNewProduct({ name: '', description: '', harga: 0, stok: 0 });
+      setNewProduct({ name: '', harga: 0, stok: 0 });
     } catch (error: any) {
       toast.error(error.message || 'Failed to add product');
       console.error('Error:', error);
@@ -140,16 +138,6 @@ export default function ProductsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    value={newProduct.description}
-                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 shadow-sm p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    rows={3}
-                  />
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
@@ -216,16 +204,6 @@ export default function ProductsPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      value={editingProduct.description || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                      className="w-full rounded-md border border-gray-300 shadow-sm p-2.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      rows={3}
-                    />
-                  </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
@@ -272,12 +250,12 @@ export default function ProductsPage() {
 
           {/* Products Table */}
           <div className={styleConfig.table.wrapper}>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -287,7 +265,6 @@ export default function ProductsPage() {
                   {products.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.description}</td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">Rp {product.harga.toLocaleString()}</td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.stok}</td>
                       <td className="px-6 py-4 space-x-2">
@@ -308,6 +285,7 @@ export default function ProductsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
             </div>
           </div>
 

@@ -67,8 +67,8 @@ const HeaderPage: React.FC = () => {
           <Link href="/" className="flex items-center space-x-3">
             <img src="/BENGKEL.png" alt="Bengkel Pro" className="h-10" />
             <div>
-              <h1 className="text-xl font-bold text-blue-900">BengkelPro</h1>
-              <p className="text-sm text-blue-600">Professional Auto Service</p>
+              <h1 className="text-xl font-bold text-blue-900">Bengkel</h1>
+              <p className="text-sm text-blue-600">Professional Service</p>
             </div>
           </Link>
 

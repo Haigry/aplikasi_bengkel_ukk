@@ -4,6 +4,7 @@ import { User, Role } from '@prisma/client';
 import { styleConfig } from '@/styles/components';
 import Modal from '@/components/common/Modal';
 import { toast } from 'react-hot-toast';
+import Pagination from '@/components/common/Pagination';
 
 // Update User type to match schema
 interface UserFormData {
@@ -31,10 +32,18 @@ export default function UsersPage() {
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [activeRole, setActiveRole] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  const filteredUsers = Array.isArray(users) ? users.filter(user => 
+  const filteredUsers = users.filter(user => 
     activeRole === 'ALL' ? true : user.role === activeRole
-  ) : [];
+  );
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   useEffect(() => {
     fetchUsers();
@@ -61,6 +70,7 @@ export default function UsersPage() {
         method: 'DELETE',
       });
       toast.success('User deleted successfully');
+      setDeleteConfirm(null);
       fetchUsers();
     } catch (error) {
       toast.error('Failed to delete user');
@@ -74,13 +84,14 @@ export default function UsersPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'users',
+          model: 'user', // Changed from 'users' to 'user'
           data: newUser
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create user');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create user');
       }
 
       toast.success('User added successfully');
@@ -122,9 +133,9 @@ export default function UsersPage() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="p-6 w-full">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="flex flex-col flex-1">
+        <div className="p-6 flex flex-col flex-1 overflow-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -150,7 +161,7 @@ export default function UsersPage() {
                 className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                   activeRole === role 
                     ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                 }`}
                 onClick={() => setActiveRole(role)}
               >
@@ -277,7 +288,7 @@ export default function UsersPage() {
               }}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <label className="block text-sm font-medium text-gray-900 mb-1">Name</label>
                     <input
                       type="text"
                       value={editingUser?.name || ''}
@@ -305,7 +316,7 @@ export default function UsersPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <label className="block text-sm font-medium text-gray-900 mb-1">Role</label>
                     <select
                       value={editingUser.role}
                       onChange={(e) => setEditingUser({
@@ -341,44 +352,87 @@ export default function UsersPage() {
           </Modal>
 
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KTP</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{user.noTelp}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{user.NoKTP}</td>
-                    <td className="px-6 py-4 space-x-2">
-                      <button
-                        onClick={() => setEditingUser(user)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KTP</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200 text-gray-900">
+                  {currentUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.noTelp}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.NoKTP}</td>
+                      <td className="px-6 py-4 space-x-2">
+                        <button
+                          onClick={() => setEditingUser(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(user.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-4 border-t">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                limit={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onLimitChange={setItemsPerPage}
+              />
+            </div>
           </div>
+
+          {/* Add Delete Confirmation Modal */}
+          <Modal
+            isOpen={!!deleteConfirm}
+            onClose={() => setDeleteConfirm(null)}
+            title="Confirm Delete"
+          >
+            <div className="p-6">
+              <p className="mb-4">Are you sure you want to delete this user?</p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="px-4 py-2 text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </Modal>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          )}
         </div>
       </div>
     </div>

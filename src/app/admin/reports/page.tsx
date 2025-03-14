@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Laporan, RiwayatLaporan } from '@prisma/client';
+import Pagination from '@/components/common/Pagination';
 
 interface ReportWithDetails extends Laporan {
   riwayatLaporan: Array<RiwayatLaporan & {
@@ -17,6 +18,8 @@ export default function ReportsPage() {
   const [reports, setReports] = useState<ReportWithDetails[]>([]);
   const [period, setPeriod] = useState<'HARIAN' | 'MINGGUAN' | 'BULANAN'>('HARIAN');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   useEffect(() => {
     fetchReports();
@@ -37,6 +40,11 @@ export default function ReportsPage() {
   const generateReport = async () => {
     // Implementation pending based on requirements
   };
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentReports = reports.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(reports.length / itemsPerPage);
 
   return (
     <div className="p-6">
@@ -79,7 +87,7 @@ export default function ReportsPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {reports.map((report) => (
+            {currentReports.map((report) => (
               <tr key={report.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   {new Date(report.tanggal).toLocaleDateString()}
@@ -95,6 +103,13 @@ export default function ReportsPage() {
             ))}
           </tbody>
         </table>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          limit={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onLimitChange={setItemsPerPage}
+        />
       </div>
     </div>
   );
