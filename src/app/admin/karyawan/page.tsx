@@ -86,11 +86,11 @@ export default function KaryawanPage() {
         setLoading(false);
       }
     }
-  }, []);
+  }, []); // Empty dependency array
 
   // Modified fetchAvailableUsers
   const fetchAvailableUsers = useCallback(async () => {
-    if (!isMounted.current) return;
+    if (!isMounted.current || loading) return; // Add loading check
     try {
       const response = await fetch('/api/admin?model=users&role=KARYAWAN');
       if (!response.ok) {
@@ -112,25 +112,23 @@ export default function KaryawanPage() {
         setAvailableUsers([]);
       }
     }
-  }, [employees]);
+  }, [employees, loading]); // Add loading to dependencies
 
   // Modified useEffect
   useEffect(() => {
-    // Initial fetch
+    isMounted.current = true;
     fetchEmployees();
-
-    // Cleanup function
     return () => {
       isMounted.current = false;
     };
-  }, []); // Remove fetchEmployees from dependency array
+  }, [fetchEmployees]); // Add fetchEmployees back to dependency array
 
   // Separate useEffect for fetchAvailableUsers
   useEffect(() => {
-    if (!loading && employees.length > 0) {
+    if (!loading) {
       fetchAvailableUsers();
     }
-  }, [loading, employees, fetchAvailableUsers]);
+  }, [loading, fetchAvailableUsers]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

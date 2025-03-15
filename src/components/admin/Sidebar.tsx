@@ -11,8 +11,10 @@ import {
   TruckIcon,
   UserIcon,
   QueueListIcon,
-  WrenchIcon, // Add this import
-  DocumentChartBarIcon // Add this import
+  WrenchIcon,
+  DocumentChartBarIcon,
+  ClockIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -23,15 +25,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const pathname = usePathname();
 
   const menuItems = [
+    // Dashboard
     { href: '/admin/', label: 'Dashboard', icon: HomeIcon },
+    
+    // User Management
     { href: '/admin/users', label: 'Users', icon: UserGroupIcon },
-    { href: '/admin/services', label: 'Services', icon: WrenchIcon }, // Add Services page
-    { href: '/admin/products', label: 'Sparepart', icon: WrenchScrewdriverIcon },
-    { href: '/admin/orders', label: 'Orders', icon: ShoppingCartIcon },
-    { href: '/admin/booking', label: 'Booking', icon: QueueListIcon },
-    { href: '/admin/kendaraan', label: 'Kendaraan', icon: TruckIcon },
     { href: '/admin/karyawan', label: 'Karyawan', icon: UserIcon },
-    { href: '/admin/reports', label: 'Reports', icon: DocumentChartBarIcon }, // Add Reports page
+    
+    // Service Management
+    { href: '/admin/services', label: 'Services', icon: WrenchIcon },
+    { href: '/admin/products', label: 'Sparepart', icon: WrenchScrewdriverIcon },
+    { href: '/admin/kendaraan', label: 'Kendaraan', icon: TruckIcon },
+    
+    // Transaction & Booking
+    { href: '/admin/booking', label: 'Booking', icon: QueueListIcon },
+    { href: '/admin/transactions', label: 'Transaction', icon: CurrencyDollarIcon },
+    { href: '/admin/riwayat', label: 'History', icon: ClockIcon },
+    
+    // Reports
+    { href: '/admin/reports', label: 'Reports', icon: DocumentChartBarIcon },
   ];
 
   return (

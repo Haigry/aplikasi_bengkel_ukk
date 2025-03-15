@@ -25,8 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
+        suppressHydrationWarning
+      >
         <NextAuthProvider>
           {children}
           <Toaster position="top-right" />

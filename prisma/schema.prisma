@@ -105,7 +105,7 @@ model Sparepart {
 }
 
 
-// Booking and Transaction
+// Booking
 model Booking {
   id        Int           @id @default(autoincrement())
   queue     Int
@@ -113,11 +113,9 @@ model Booking {
   message   String        @db.Text
   status    BookingStatus @default(PENDING)
   
-  // Relations
+  // Relasi
   userId    Int
   user      User         @relation(fields: [userId], references: [id])
-  
-  // Timestamps
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 }

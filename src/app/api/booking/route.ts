@@ -4,8 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
-    // Create booking without manually setting queue number
+    
     const booking = await prisma.booking.create({
       data: {
         ...body,

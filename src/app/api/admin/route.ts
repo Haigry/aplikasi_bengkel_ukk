@@ -187,34 +187,64 @@ export async function GET(request: Request) {
         );
 
       case 'riwayat':
-        return NextResponse.json(
-          id ?
-            await prisma.riwayat.findUnique({
-              where: { id: Number(id) },
-              include: {
-                user: true,
-                karyawan: true,
-                kendaraan: true,
-                service: true,
-                sparepart: true,
-                riwayatLaporan: true
-              }
-            })
-          : await prisma.riwayat.findMany({
-              include: {
-                user: {
-                  select: {
-                    name: true,
-                    noTelp: true
+        try {
+          const riwayatData = id 
+            ? await prisma.riwayat.findUnique({
+                where: { id: Number(id) },
+                include: {
+                  user: {
+                    select: {
+                      name: true,
+                      email: true,
+                    }
+                  },
+                  karyawan: {
+                    select: {
+                      name: true,
+                    }
+                  },
+                  kendaraan: true,
+                  service: true,
+                  sparepart: true,
+                  spareParts: {
+                    include: {
+                      sparepart: true
+                    }
+                  }
+                }
+              })
+            : await prisma.riwayat.findMany({
+                include: {
+                  user: {
+                    select: {
+                      name: true,
+                      email: true,
+                    }
+                  },
+                  karyawan: {
+                    select: {
+                      name: true,
+                    }
+                  },
+                  kendaraan: true,
+                  service: true,
+                  sparepart: true,
+                  spareParts: {
+                    include: {
+                      sparepart: true
+                    }
                   }
                 },
-                karyawan: true,
-                kendaraan: true,
-                service: true,
-                sparepart: true
-              }
-            })
-        );
+                orderBy: {
+                  createdAt: 'desc'
+                }
+              });
+
+          return NextResponse.json(riwayatData);
+        } catch (error) {
+          console.error('Error fetching riwayat:', error);
+          return handleError(error);
+        }
 
       case 'laporan':
         return NextResponse.json(
