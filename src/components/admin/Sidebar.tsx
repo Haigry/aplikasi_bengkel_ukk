@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             height={50}
             className=""
           />
-          <span className="text-lg font-bold">Dashboard Admin</span>
+          <span className="text-lg font-bold">Dashboard</span>
         </div>
       </div>
 

@@ -1,13 +1,16 @@
 'use client';
-import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 
-interface HeaderProps {
-  onMenuClick?: () => void;
-}
+import { useSession, signOut } from 'next-auth/react';
 
-const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
-  const { logout, user } = useAuth();
+const Header = ({ onMenuClick }: { onMenuClick: () => void }) => {
+  const { data: session } = useSession();
+
+  const handleLogout = () => {
+    signOut({ 
+      redirect: true,
+      callbackUrl: '/login'
+    });
+  };
 
   return (
     <header className="bg-white shadow-sm z-20">
@@ -22,16 +25,13 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </svg>
           </button>
           <span className="text-xl font-semibold text-gray-800">
-            {user?.name || 'Welcome'}
+            {session?.user?.name || 'Welcome'}
           </span>
         </div>
-        
+
         <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-600 hidden sm:inline">
-            {user?.role || ''}
-          </span>
           <button
-            onClick={() => logout()}
+            onClick={handleLogout}
             className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
           >
             Logout
