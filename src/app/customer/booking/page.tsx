@@ -24,6 +24,7 @@ export default function CustomerBookingPage() {
   const [userVehicles, setUserVehicles] = useState<Kendaraan[]>([]);
   const [isNewVehicle, setIsNewVehicle] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<Kendaraan | null>(null);
+  const [booking, setBooking] = useState<any>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -35,10 +36,19 @@ export default function CustomerBookingPage() {
     try {
       const res = await fetch(`/api/customer/vehicles?userId=${session?.user?.id}`);
       const data = await res.json();
-      setUserVehicles(data);
+      
+      // Ensure data is an array before setting state
+      if (Array.isArray(data)) {
+        setUserVehicles(data);
+      } else {
+        // If data is not an array, initialize as empty array
+        setUserVehicles([]);
+        console.error('Received invalid vehicles data:', data);
+      }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
       toast.error('Failed to load vehicles');
+      setUserVehicles([]); // Set empty array on error
     }
   };
 
@@ -90,6 +100,9 @@ export default function CustomerBookingPage() {
         throw new Error('Failed to create booking');
       }
 
+      const bookingData = await bookingRes.json();
+      setBooking(bookingData);
+
       toast.success('Booking created successfully!');
       router.push('/customer/booking/history');
     } catch (error) {
@@ -97,6 +110,11 @@ export default function CustomerBookingPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatQueueNumber = (queue: number) => {
+    // Format to 3 digits with leading zeros
+    return `${new Date().toISOString().split('T')[0]}-${queue.toString().padStart(3, '0')}`;
   };
 
   if (!session) {
@@ -214,12 +232,12 @@ export default function CustomerBookingPage() {
                       className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                       value={selectedVehicle?.id || ''}
                       onChange={(e) => {
-                        const vehicle = userVehicles.find(v => v.id === e.target.value);
+                        const vehicle = userVehicles?.find(v => v.id === e.target.value);
                         setSelectedVehicle(vehicle || null);
                       }}
                     >
                       <option value="">Choose a vehicle</option>
-                      {userVehicles.map((vehicle) => (
+                      {Array.isArray(userVehicles) && userVehicles.map((vehicle) => (
                         <option key={vehicle.id} value={vehicle.id}>
                           {vehicle.merk} {vehicle.tipe} - {vehicle.id}
                         </option>
@@ -301,6 +319,14 @@ export default function CustomerBookingPage() {
               </button>
             </div>
           </form>
+
+          {booking && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h3 className="text-lg font-medium text-green-800">Booking Confirmed!</h3>
+              <p className="text-green-700">Your queue number is: {formatQueueNumber(booking.queue)}</p>
+              <p className="text-sm text-green-600">Please save this number for your reference.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

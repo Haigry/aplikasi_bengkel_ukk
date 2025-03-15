@@ -6,6 +6,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 // Enums
@@ -126,6 +127,7 @@ model Riwayat {
   totalHarga  Float     @default(0)
   quantity    Int       @default(1)
   harga       Float     @default(0)
+  bookingId   Int?      // Add this field
   
   // Relations
   userId      Int
