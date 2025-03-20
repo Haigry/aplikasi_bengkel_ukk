@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import Modal from '@/components/common/Modal';
 import { BookingStatus, Order } from '@/types';
 import Pagination from '@/components/common/Pagination';
+import { generateCustomerInvoice } from '@/utils/invoiceGenerator';
 
 export default function RiwayatPage() {
   const [riwayat, setRiwayat] = useState<Order[]>([]);
@@ -160,7 +161,7 @@ export default function RiwayatPage() {
         title="Detail Pesanan"
       >
         {selectedOrder && (
-          <div className="space-y-4">
+          <div className="space-y-4 text-gray-900">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="font-medium text-gray-700">Informasi Pelanggan</h3>
@@ -225,7 +226,16 @@ export default function RiwayatPage() {
               </p>
             </div>
 
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-4 space-x-4">
+              <button
+                onClick={() => {
+                  const doc = generateCustomerInvoice(selectedOrder);
+                  doc.save(`invoice-${selectedOrder.id}.pdf`);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Download Invoice
+              </button>
               <button
                 onClick={() => setSelectedOrder(null)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
