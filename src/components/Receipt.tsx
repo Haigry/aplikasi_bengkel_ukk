@@ -10,7 +10,7 @@ interface ReceiptProps {
 
 const Receipt: React.FC<ReceiptProps> = ({ transaction }) => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="bg-white p-6 rounded-lg shadow text-gray-600">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold">Service Receipt</h2>
         <p className="text-gray-600">#{transaction.id}</p>

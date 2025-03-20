@@ -112,9 +112,9 @@ export default function AdminDashboardPage() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard Admin</h1>
         <div className="text-sm text-gray-600">
-          Last updated: {new Date().toLocaleString()}
+          Terakhir diupdate: {new Date().toLocaleString()}
         </div>
       </div>
 
@@ -132,7 +132,7 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Chart */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Monthly Revenue</h3>
+          <h3 className="text-lg font-semibold mb-4">Pendapatan Bulanan</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.monthlyRevenue}>
@@ -148,7 +148,7 @@ export default function AdminDashboardPage() {
 
         {/* Service Stats */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Popular Services</h3>
+          <h3 className="text-lg font-semibold mb-4">Servis Populer</h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.serviceStats}>

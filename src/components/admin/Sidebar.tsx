@@ -7,14 +7,14 @@ import {
   HomeIcon, 
   UserGroupIcon, 
   WrenchScrewdriverIcon,
-  ShoppingCartIcon,
   TruckIcon,
   UserIcon,
   QueueListIcon,
   WrenchIcon,
   DocumentChartBarIcon,
   ClockIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  ArchiveBoxArrowDownIcon
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -34,12 +34,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     
     // Service Management
     { href: '/admin/services', label: 'Services', icon: WrenchIcon },
-    { href: '/admin/products', label: 'Sparepart', icon: WrenchScrewdriverIcon },
+    { href: '/admin/sparepart', label: 'Sparepart', icon: WrenchScrewdriverIcon },
     { href: '/admin/kendaraan', label: 'Kendaraan', icon: TruckIcon },
     
     // Transaction & Booking
     { href: '/admin/booking', label: 'Booking', icon: QueueListIcon },
-    { href: '/admin/transactions', label: 'Transaction', icon: CurrencyDollarIcon },
+    { href: '/admin/orders', label: 'Order', icon: ArchiveBoxArrowDownIcon },
     { href: '/admin/riwayat', label: 'History', icon: ClockIcon },
     
     // Reports

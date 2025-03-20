@@ -11,6 +11,90 @@ const handleError = (error: any) => {
   return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 };
 
+const getBookings = async () => {
+  return await prisma.booking.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          noTelp: true
+        }
+      }
+    },
+    orderBy: {
+      date: 'desc'
+    }
+  });
+};
+
+const handleBookingCreate = async (data: any) => {
+  const booking = await prisma.booking.create({
+    data: {
+      userId: data.userId,
+      date: new Date(data.date),
+      message: data.message,
+      queue: data.queue || 1,
+      status: data.status || 'PENDING',
+      kendaraanId: data.kendaraanId || null
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
+    }
+  });
+  return booking;
+};
+
+const handleRiwayatCreate = async (data: any) => {
+  // Get sparepart details first
+  const spareParts = await Promise.all(
+    data.spareParts?.map(async (part: any) => {
+      const sparepart = await prisma.sparepart.findUnique({
+        where: { id: part.id }
+      });
+      return {
+        sparepartId: part.id,
+        quantity: part.quantity,
+        harga: sparepart?.harga || 0 // Use actual sparepart price
+      };
+    }) || []
+  );
+
+  return await prisma.riwayat.create({
+    data: {
+      userId: data.userId,
+      karyawanId: data.karyawanId,
+      kendaraanId: data.kendaraanId,
+      serviceId: data.serviceId,
+      totalHarga: data.totalHarga,
+      quantity: data.quantity,
+      harga: data.harga,
+      status: data.status || 'PENDING',
+      spareParts: {
+        create: spareParts
+      }
+    },
+    include: {
+      user: true,
+      karyawan: true,
+      kendaraan: true,
+      service: true,
+      spareParts: {
+        include: {
+          sparepart: true
+        }
+      }
+    }
+  });
+};
+
 // Generic CRUD operations
 export async function GET(request: Request) {
   try {
@@ -156,35 +240,51 @@ export async function GET(request: Request) {
         );
 
       case 'booking':
-        return NextResponse.json(
-          id ?
-            await prisma.booking.findUnique({
-              where: { id: Number(id) },
-              include: {
-                user: {
-                  select: {
-                    name: true,
-                    noTelp: true,
-                    email: true
-                  }
+        try {
+          const bookings = await prisma.booking.findMany({
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  noTelp: true,
+                  email: true
                 }
               }
-            })
-          : await prisma.booking.findMany({
-              include: {
-                user: {
-                  select: {
-                    name: true,
-                    noTelp: true,
-                    email: true
-                  }
-                }
-              },
-              orderBy: {
-                date: 'desc'
-              }
-            })
-        );
+            },
+            orderBy: [
+              { date: 'desc' },
+              { createdAt: 'desc' }
+            ]
+          });
+
+          // Map the results to match the expected format
+          const formattedBookings = bookings.map(booking => ({
+            id: booking.id,
+            userId: booking.userId,
+            date: booking.date.toISOString(),
+            message: booking.message || '',
+            status: booking.status || 'PENDING',
+            queue: booking.queue || 1,
+            createdAt: booking.createdAt.toISOString(),
+            user: {
+              id: booking.user.id,
+              name: booking.user.name || 'Unknown',
+              noTelp: booking.user.noTelp || '',
+              email: booking.user.email || ''
+            }
+          }));
+
+          return NextResponse.json(formattedBookings);
+        } catch (error) {
+          console.error('Error fetching bookings:', error);
+          return NextResponse.json({ 
+            error: 'Failed to fetch bookings',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          }, { 
+            status: 500 
+          });
+        }
 
       case 'riwayat':
         try {
@@ -287,34 +387,79 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { model, data } = await request.json();
+    if (!req.body) {
+      return NextResponse.json({ error: 'Request body is required' }, { status: 400 });
+    }
 
-    switch (model) {
-      case 'booking':
-        if (!data.userId || !data.date || !data.message) {
+    const { model, data } = await req.json();
+
+    if (!model || !data) {
+      return NextResponse.json({ error: 'Model dan data diperlukan' }, { status: 400 });
+    }
+
+    if (model === 'booking') {
+      try {
+        // Validate required fields
+        if (!data.userId || !data.message) {
           return NextResponse.json(
             { error: 'Missing required fields' },
             { status: 400 }
           );
         }
-        
-        const lastBooking = await prisma.booking.findFirst({
-          orderBy: { queue: 'desc' }
-        });
-        
-        const booking = await prisma.booking.create({
-          data: {
-            userId: data.userId,
-            date: new Date(data.date),
-            message: data.message,
-            queue: (lastBooking?.queue ?? 0) + 1,
-            status: data.status as BookingStatus ?? 'PENDING'
+
+        // Get today's queue number
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const latestBooking = await prisma.booking.findFirst({
+          where: {
+            date: {
+              gte: today
+            }
+          },
+          orderBy: {
+            queue: 'desc'
           }
         });
-        return NextResponse.json(booking);
 
+        const queueNumber = latestBooking ? latestBooking.queue + 1 : 1;
+
+        // Create booking
+        const result = await prisma.booking.create({
+          data: {
+            userId: Number(data.userId),
+            message: String(data.message),
+            date: new Date(),
+            status: 'PENDING' as BookingStatus,
+            queue: queueNumber,
+            kendaraanId: data.kendaraanId || null
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                noTelp: true,
+                email: true
+              }
+            }
+          }
+        });
+
+        return NextResponse.json(result);
+      } catch (error) {
+        console.error('Error creating booking:', error);
+        return NextResponse.json(
+          { error: 'Failed to create booking', details: error instanceof Error ? error.message : 'Unknown error' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Handle other models
+    switch (model) {
       case 'laporan':
         const laporan = await prisma.laporan.create({
           data: {
@@ -402,56 +547,99 @@ export async function POST(request: Request) {
         return NextResponse.json(sparepart);
 
       case 'riwayat':
-        const riwayat = await prisma.riwayat.create({
-          data: {
-            userId: data.userId,
-            karyawanId: data.karyawanId,
-            kendaraanId: data.kendaraanId,
-            serviceId: data.serviceId,
-            // Handle multiple parts in a transaction
-            spareParts: {
-              create: data.spareParts.map((part: { id: any; quantity: any; harga: any; }) => ({
-                sparepartId: part.id,
-                quantity: part.quantity,
-                harga: part.harga
-              }))
-            },
-            totalHarga: data.totalHarga,
-            harga: data.harga
-          },
-          include: {
-            user: true,
-            karyawan: true,
-            kendaraan: true,
-            service: true,
-            spareParts: {
+        try {
+          // Start transaction
+          const result = await prisma.$transaction(async (tx) => {
+            // Validate required fields
+            if (!data.userId || !data.karyawanId || !data.kendaraanId) {
+              throw new Error('Missing required fields');
+            }
+
+            // Check stock availability first
+            if (data.spareParts && Array.isArray(data.spareParts) && data.spareParts.length > 0) {
+              for (const part of data.spareParts) {
+                const sparepart = await tx.sparepart.findUnique({
+                  where: { id: Number(part.id) }
+                });
+                
+                if (!sparepart) {
+                  throw new Error(`Sparepart with ID ${part.id} not found`);
+                }
+                
+                if (sparepart.stok < part.quantity) {
+                  throw new Error(`Insufficient stock for ${sparepart.name} (ID: ${part.id}). Available: ${sparepart.stok}, Requested: ${part.quantity}`);
+                }
+              }
+            }
+
+            // Create riwayat
+            const riwayat = await tx.riwayat.create({
+              data: {
+                userId: Number(data.userId),
+                karyawanId: Number(data.karyawanId),
+                kendaraanId: String(data.kendaraanId),
+                serviceId: data.serviceId ? Number(data.serviceId) : null,
+                totalHarga: Number(data.totalHarga) || 0,
+                harga: Number(data.harga) || 0,
+                quantity: Number(data.quantity) || 1,
+                status: data.status || 'PENDING',
+                ...(data.spareParts && data.spareParts.length > 0 && {
+                  spareParts: {
+                    create: data.spareParts.map((part: { id: any; quantity: any; harga: any; }) => ({
+                      sparepartId: Number(part.id),
+                      quantity: Number(part.quantity),
+                      harga: Number(part.harga || 0)
+                    }))
+                  }
+                })
+              },
               include: {
-                sparepart: true
+                user: true,
+                karyawan: true,
+                kendaraan: true,
+                service: true,
+                spareParts: {
+                  include: {
+                    sparepart: true
+                  }
+                }
               }
+            });
+
+            // Update sparepart stock only if there are spareparts
+            if (data.spareParts && Array.isArray(data.spareParts) && data.spareParts.length > 0) {
+              await Promise.all(data.spareParts.map((part: { id: any; quantity: any; }) => 
+                tx.sparepart.update({
+                  where: { id: Number(part.id) },
+                  data: {
+                    stok: {
+                      decrement: Number(part.quantity)
+                    }
+                  }
+                })
+              ));
             }
-          }
-        });
-        
-        // Update sparepart stock
-        await Promise.all(data.spareParts.map((part: { id: any; quantity: any; }) => 
-          prisma.sparepart.update({
-            where: { id: part.id },
-            data: {
-              stok: {
-                decrement: part.quantity
-              }
-            }
-          })
-        ));
-      
-        return NextResponse.json(riwayat);
+
+            return riwayat;
+          });
+
+          return NextResponse.json(result);
+        } catch (error) {
+          console.error('Error creating riwayat:', error);
+          return NextResponse.json({
+            error: 'Failed to create riwayat',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          }, {
+            status: 400
+          });
+        }
 
       case 'user':
       case 'users':
         // Validate required fields
         if (!data.email || !data.password || !data.role) {
           return NextResponse.json(
-            { error: 'Email, password and role are required' },
+            { error: 'Email, password dan role diperlukan' },
             { status: 400 }
           );
         }
@@ -542,13 +730,12 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Internal server error',
-        details: error 
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Internal server error',
+      details: error instanceof Error ? error.stack : undefined
+    }, { 
+      status: 500 
+    });
   }
 }
 
@@ -556,15 +743,114 @@ export async function PUT(request: Request) {
   try {
     const { model, id, data } = await request.json();
 
-    if (model === 'booking') {
-      const booking = await prisma.booking.update({
-        where: { id: id },
-        data: data
-      });
-      return NextResponse.json(booking);
-    }
-
     switch (model) {
+      case 'riwayat':
+        try {
+          const result = await prisma.$transaction(async (tx) => {
+            // Get current spareparts for stock adjustment
+            const currentRiwayat = await tx.riwayat.findUnique({
+              where: { id: Number(id) },
+              include: {
+                spareParts: {
+                  include: { sparepart: true }
+                }
+              }
+            });
+
+            // Return stock from old parts
+            if (currentRiwayat?.spareParts) {
+              await Promise.all(
+                currentRiwayat.spareParts.map(part => 
+                  tx.sparepart.update({
+                    where: { id: part.sparepartId },
+                    data: {
+                      stok: { increment: part.quantity }
+                    }
+                  })
+                )
+              );
+            }
+
+            // Delete existing spare parts relationships
+            await tx.riwayatSparepart.deleteMany({
+              where: { riwayatId: Number(id) }
+            });
+
+            // Update main record
+            const updateData = {
+              status: data.status,
+              totalHarga: Number(data.totalHarga),
+              serviceId: data.serviceId,
+              notes: data.notes || '',
+            };
+
+            const updatedRiwayat = await tx.riwayat.update({
+              where: { id: Number(id) },
+              data: updateData
+            });
+
+            // Create new spare parts and decrease stock
+            if (Array.isArray(data.spareParts) && data.spareParts.length > 0) {
+              // First check stock availability
+              for (const part of data.spareParts) {
+                const sparepart = await tx.sparepart.findUnique({
+                  where: { id: Number(part.sparepartId) }
+                });
+                
+                if (!sparepart || sparepart.stok < part.quantity) {
+                  throw new Error(`Insufficient stock for part ID ${part.sparepartId}`);
+                }
+              }
+
+              // Create new relationships and update stock
+              await Promise.all([
+                // Create new relationships
+                tx.riwayatSparepart.createMany({
+                  data: data.spareParts.map((part: { sparepartId: number; quantity: number; harga: number; }) => ({
+                    riwayatId: Number(id),
+                    sparepartId: Number(part.sparepartId),
+                    quantity: Number(part.quantity),
+                    harga: Number(part.harga)
+                  }))
+                }),
+                // Update stock
+                ...data.spareParts.map((part: { sparepartId: number; quantity: number; }) =>
+                  tx.sparepart.update({
+                    where: { id: Number(part.sparepartId) },
+                    data: {
+                      stok: { decrement: Number(part.quantity) }
+                    }
+                  })
+                )
+              ]);
+            }
+
+            // Return complete updated record
+            return await tx.riwayat.findUnique({
+              where: { id: Number(id) },
+              include: {
+                user: true,
+                karyawan: true,
+                kendaraan: true,
+                service: true,
+                spareParts: {
+                  include: {
+                    sparepart: true
+                  }
+                }
+              }
+            });
+          });
+
+          return NextResponse.json(result);
+        } catch (error) {
+          console.error('Error updating riwayat:', error);
+          return NextResponse.json({
+            error: 'Failed to update riwayat',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          }, { status: 400 });
+        }
+
       case 'user':
         let updateData = { ...data };
         
@@ -616,22 +902,30 @@ export async function PUT(request: Request) {
             }
           })
         );
-      case 'riwayat':
-        return NextResponse.json(
-          await prisma.riwayat.update({
-            where: { id: Number(id) },
-            data,
-            include: {
-              user: true,
-              karyawan: true
-            }
-          })
-        );
       case 'kendaraan':
         return NextResponse.json(
           await prisma.kendaraan.update({
             where: { id: String(id) },
             data
+          })
+        );
+      case 'booking':
+        return NextResponse.json(
+          await prisma.booking.update({
+            where: { id: Number(id) },
+            data: {
+              status: data.status as BookingStatus
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  noTelp: true
+                }
+              }
+            }
           })
         );
       default:
@@ -653,7 +947,7 @@ export async function DELETE(request: Request) {
     }
 
     switch (model) {
-      case 'user':
+      case 'users':
         return NextResponse.json(
           await prisma.user.delete({
             where: { id: Number(id) }
@@ -690,11 +984,31 @@ export async function DELETE(request: Request) {
           })
         );
       case 'riwayat':
-        return NextResponse.json(
-          await prisma.riwayat.delete({
+        try {
+          // First delete related spareParts
+          await prisma.riwayatSparepart.deleteMany({
+            where: { riwayatId: Number(id) }
+          });
+
+          // Then delete the riwayat
+          const deletedRiwayat = await prisma.riwayat.delete({
             where: { id: Number(id) }
-          })
-        );
+          });
+
+          return NextResponse.json({
+            success: true,
+            message: 'Successfully deleted riwayat',
+            data: deletedRiwayat
+          });
+        } catch (error) {
+          console.error('Error deleting riwayat:', error);
+          return NextResponse.json({ 
+            error: 'Failed to delete riwayat',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          }, { 
+            status: 500 
+          });
+        }
       case 'kendaraan':
         return NextResponse.json(
           await prisma.kendaraan.delete({
