@@ -1,200 +1,168 @@
-// Database Configuration
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+model booking {
+  id          Int            @id @default(autoincrement())
+  queue       Int
+  date        DateTime
+  message     String         @db.Text
+  status      booking_status @default(PENDING)
+  kendaraanId String
+  userId      Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime
+  kendaraan   kendaraan      @relation(fields: [kendaraanId], references: [noPolisi], map: "Booking_kendaraanId_fkey")
+  user        user           @relation(fields: [userId], references: [id], map: "Booking_userId_fkey")
+
+  @@index([kendaraanId], map: "Booking_kendaraanId_fkey")
+  @@index([userId], map: "Booking_userId_fkey")
 }
 
-// Enums
-enum Role {
-  ADMIN
-  KARYAWAN
-  CUSTOMER
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-}
-
-// User Management Models
-model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  password  String
-  name      String?
-  noTelp    String?
-  alamat    String?   @db.Text
-  NoKTP     String?   @unique
-  role      Role      @default(CUSTOMER)
-  
-  // Relations
-  karyawan   Karyawan?
-  kendaraan  Kendaraan[]
-  transaksi  Riwayat[]
-  booking    Booking[]
-  
-  // Timestamps
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-}
-
-
-model Karyawan {
+model karyawan {
   id        Int       @id @default(autoincrement())
   name      String
   position  String
-  
-  // Relations
-  userId    Int?      @unique
-  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  transaksi Riwayat[]
-  
-  // Timestamps
+  userId    Int?      @unique(map: "Karyawan_userId_key")
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  updatedAt DateTime
+  user      user?     @relation(fields: [userId], references: [id], map: "Karyawan_userId_fkey")
+  riwayat   riwayat[]
 }
 
-
-// Vehicle Management
-model Kendaraan {
-  id        String    @id @map("noPolisi")
+model kendaraan {
+  noPolisi  String    @id
   merk      String
   tipe      String
   transmisi String
   tahun     Int
   CC        Int
-  
-  // Relations
   userId    Int
-  user      User      @relation(fields: [userId], references: [id])
-  booking   Booking[]
-  transaksi Riwayat[]
+  booking   booking[]
+  user      user      @relation(fields: [userId], references: [id], map: "Kendaraan_userId_fkey")
+  riwayat   riwayat[]
+
+  @@index([userId], map: "Kendaraan_userId_fkey")
 }
 
-
-// Service Management
-model Service {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String?
-  harga       Float
-  
-  // Relations
-  transaksi   Riwayat[]
-}
-
-
-model Sparepart {
-  id          Int       @id @default(autoincrement())
-  name        String
-  harga       Float
-  stok        Int       @default(0)
-  
-  // Relations
-  transaksi     Riwayat[]
-  riwayatItems  RiwayatSparepart[]
-  
-  // Timestamps
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-
-// Booking
-model Booking {
-  id        Int           @id @default(autoincrement())
-  queue     Int
-  date      DateTime
-  message   String        @db.Text
-  status    BookingStatus @default(PENDING)
-  
-  // Relasi
-  kendaraanId String
-  kendaraan   Kendaraan    @relation(fields: [kendaraanId], references: [id])
-  userId    Int
-  user      User         @relation(fields: [userId], references: [id])
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-}
-
-model Riwayat {
-  id          Int       @id @default(autoincrement())
-  totalHarga  Float     @default(0)
-  quantity    Int       @default(1)
-  harga       Float     @default(0)
-  bookingId   Int?      
-  status      String    @default("PENDING") // Add this line
-  notes       String?   @db.Text           // Add this line
-  
-  // Relations
-  userId      Int
-  karyawanId  Int
-  kendaraanId String
-  sparepartId Int?
-  serviceId   Int?
-  
-  user        User      @relation(fields: [userId], references: [id])
-  karyawan    Karyawan  @relation(fields: [karyawanId], references: [id])
-  kendaraan   Kendaraan @relation(fields: [kendaraanId], references: [id])
-  sparepart   Sparepart? @relation(fields: [sparepartId], references: [id])  // Keep this for backward compatibility
-  spareParts  RiwayatSparepart[]  // Add this new relation
-  service     Service?   @relation(fields: [serviceId], references: [id])
-  
-  riwayatLaporan RiwayatLaporan[]
-  
-  // Timestamps
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-// Reporting
-model Laporan {
-  id              Int       @id @default(autoincrement())
+model laporan {
+  id              Int              @id @default(autoincrement())
   tanggal         DateTime
-  periode         String    // 'HARIAN', 'MINGGUAN', 'BULANAN'
-  omset           Float     @default(0)
-  jumlahServis    Int       @default(0)
-  jumlahSparepart Int       @default(0)
-  totalTransaksi  Int       @default(0)
-  
-  // Relations
-  riwayatLaporan  RiwayatLaporan[]
-  
-  // Timestamps
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  periode         String
+  omset           Float            @default(0)
+  jumlahServis    Int              @default(0)
+  jumlahSparepart Int              @default(0)
+  totalTransaksi  Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime
+  riwayatlaporan  riwayatlaporan[]
 }
 
-model RiwayatLaporan {
-  laporanId  Int
-  riwayatId  Int
-  
-  // Relations
-  laporan    Laporan @relation(fields: [laporanId], references: [id])
-  riwayat    Riwayat @relation(fields: [riwayatId], references: [id])
+model riwayat {
+  id               Int                @id @default(autoincrement())
+  totalHarga       Float              @default(0)
+  quantity         Int                @default(1)
+  harga            Float              @default(0)
+  bookingId        Int?
+  status           String             @default("PENDING")
+  notes            String?            @db.Text
+  userId           Int
+  karyawanId       Int
+  kendaraanId      String
+  sparepartId      Int?
+  serviceId        Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  karyawan         karyawan           @relation(fields: [karyawanId], references: [id], map: "Riwayat_karyawanId_fkey")
+  kendaraan        kendaraan          @relation(fields: [kendaraanId], references: [noPolisi], map: "Riwayat_kendaraanId_fkey")
+  service          service?           @relation(fields: [serviceId], references: [id], map: "Riwayat_serviceId_fkey")
+  sparepart        sparepart?         @relation(fields: [sparepartId], references: [id], map: "Riwayat_sparepartId_fkey")
+  user             user               @relation(fields: [userId], references: [id], map: "Riwayat_userId_fkey")
+  riwayatlaporan   riwayatlaporan[]
+  riwayatsparepart riwayatsparepart[]
+
+  @@index([karyawanId], map: "Riwayat_karyawanId_fkey")
+  @@index([kendaraanId], map: "Riwayat_kendaraanId_fkey")
+  @@index([serviceId], map: "Riwayat_serviceId_fkey")
+  @@index([sparepartId], map: "Riwayat_sparepartId_fkey")
+  @@index([userId], map: "Riwayat_userId_fkey")
+}
+
+model riwayatlaporan {
+  laporanId Int
+  riwayatId Int
+  laporan   laporan @relation(fields: [laporanId], references: [id], map: "RiwayatLaporan_laporanId_fkey")
+  riwayat   riwayat @relation(fields: [riwayatId], references: [id], map: "RiwayatLaporan_riwayatId_fkey")
 
   @@id([laporanId, riwayatId])
+  @@index([riwayatId], map: "RiwayatLaporan_riwayatId_fkey")
 }
 
-// Add new model for sparepart items in a transaction
-model RiwayatSparepart {
+model riwayatsparepart {
   id          Int       @id @default(autoincrement())
   riwayatId   Int
   sparepartId Int
   quantity    Int       @default(1)
-  harga       Float     // Price at time of purchase
-  
-  // Relations
-  riwayat     Riwayat    @relation(fields: [riwayatId], references: [id])
-  sparepart   Sparepart  @relation(fields: [sparepartId], references: [id])
-
-  // Timestamps
+  harga       Float
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime
+  riwayat     riwayat   @relation(fields: [riwayatId], references: [id], map: "RiwayatSparepart_riwayatId_fkey")
+  sparepart   sparepart @relation(fields: [sparepartId], references: [id], map: "RiwayatSparepart_sparepartId_fkey")
+
+  @@index([riwayatId], map: "RiwayatSparepart_riwayatId_fkey")
+  @@index([sparepartId], map: "RiwayatSparepart_sparepartId_fkey")
+}
+
+model service {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  harga       Float
+  riwayat     riwayat[]
+}
+
+model sparepart {
+  id               Int                @id @default(autoincrement())
+  name             String
+  harga            Float
+  stok             Int                @default(0)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  riwayat          riwayat[]
+  riwayatsparepart riwayatsparepart[]
+}
+
+model user {
+  id        Int         @id @default(autoincrement())
+  email     String      @unique(map: "User_email_key")
+  password  String
+  name      String?
+  noTelp    String?
+  alamat    String?     @db.Text
+  NoKTP     String?     @unique(map: "User_NoKTP_key")
+  role      user_role   @default(CUSTOMER)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime
+  booking   booking[]
+  karyawan  karyawan?
+  kendaraan kendaraan[]
+  riwayat   riwayat[]
+}
+
+enum booking_status {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum user_role {
+  ADMIN
+  KARYAWAN
+  CUSTOMER
 }

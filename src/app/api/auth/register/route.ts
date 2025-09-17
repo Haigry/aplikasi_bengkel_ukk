@@ -1,56 +1,49 @@
-import { NextResponse } from 'next/server';
-import { hashPassword } from '@/lib/auth/password';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import {prisma} from "@/lib/prisma";
+import bcrypt from "bcrypt";
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name, noTelp, alamat, NoKTP } = await request.json();
+    const body = await request.json();
+    const { email, password, name, noTelp, alamat, NoKTP } = body;
 
-    // Check if user exists
+    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Email sudah terdaftar' },
+        { error: "Email already registered" },
         { status: 400 }
       );
     }
 
     // Hash password
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with optional fields
+    // Create new user
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
-        name: name || null,
-        noTelp: noTelp || null,
-        alamat: alamat || null,
-        NoKTP: NoKTP || null,
-        role: 'CUSTOMER',
+        name,
+        noTelp,
+        alamat,
+        NoKTP,
+        role: "CUSTOMER"
       }
     });
 
-    return NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        noTelp: user.noTelp,
-        alamat: user.alamat,
-        NoKTP: user.NoKTP,
-        role: user.role
-      }
-    });
-
-  } catch (error) {
-    console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Terjadi kesalahan saat mendaftar' },
+      { message: "User registered successfully" },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Registration error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
-}
+  }
